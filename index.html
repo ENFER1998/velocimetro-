@@ -283,6 +283,22 @@
     .text-slate-300 { color: #cbd5e1; }
     .text-slate-400 { color: #94a3b8; }
 
+
+    /* Launcher Swipe-Down Top Drawer (Modo Kiosco / Launcher Puro) */
+    #kioskSwipeDrawer {
+      transform: translateY(-105%);
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    #kioskSwipeDrawer.drawer-open {
+      transform: translateY(0%);
+    }
+    #kioskPullHandle {
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    #kioskPullHandle:hover, #kioskPullHandle:active {
+      opacity: 1 !important;
+    }
+
     input[type="range"] {
       accent-color: #f59e0b;
     }
@@ -342,13 +358,19 @@
           <button id="btnAudioToggle" type="button" title="Sonido de relé mecánico y alertas" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-medium transition">
             Audio: ON
           </button>
+          <button id="btnLauncherWifi" type="button" title="Abrir Configuración de Wi-Fi de Android" class="px-2 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 text-[11px] font-semibold transition">
+            📶 Wi-Fi
+          </button>
+          <button id="btnLauncherSettings" type="button" title="Abrir Ajustes del Sistema Android" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold transition">
+            ⚙️ Ajustes
+          </button>
           <button id="btnConnectSerial" type="button" class="px-2 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/40 text-cyan-300 text-[11px] font-semibold transition">
             USB ESP32
           </button>
           <button id="btnOpenCodeModal" type="button" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-semibold transition">
             Código ESP32 + TV Box
           </button>
-          <button id="btnKioskMode" type="button" title="Modo Kiosco Panorámico sin controles" class="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold transition">
+          <button id="btnKioskMode" type="button" title="Modo Kiosco Panorámico con Cortina Deslizable" class="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold transition">
             Kiosco
           </button>
         </div>
@@ -391,11 +413,41 @@
       <!-- Hardware-safe Night Dimming Overlay -->
       <div id="nightDimOverlay" class="absolute inset-0 z-30 bg-[#050300] opacity-0"></div>
 
-      <!-- Floating Kiosk Controls -->
-      <div class="absolute top-2.5 right-3 z-40 flex items-center gap-1.5">
-        <button id="btnExitKiosk" type="button" class="hidden px-3 py-1 rounded-full bg-slate-900/90 hover:bg-slate-800 text-amber-300 text-xs font-semibold border border-amber-500/40 backdrop-blur shadow-lg">
-          Salir Modo Kiosco
-        </button>
+      <!-- SWIPE-DOWN TOP HANDLE & SLIDE-DOWN LAUNCHER DRAWER (Replaces fixed Kiosk button) -->
+      <div id="kioskPullZone" class="hidden absolute top-0 left-0 right-0 h-7 z-40 flex justify-center items-start cursor-pointer" title="Deslizá hacia abajo o tocá la pestaña para abrir el menú rápido del Launcher">
+        <div id="kioskPullHandle" class="mt-1 w-28 h-1.5 rounded-full bg-slate-400/35 border border-white/15 backdrop-blur"></div>
+      </div>
+
+      <div id="kioskSwipeDrawer" class="absolute top-0 left-0 right-0 z-40 bg-[#080d18]/95 border-b border-amber-500/40 px-4 py-2.5 backdrop-blur-md shadow-2xl flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="font-orbitron font-bold text-xs text-amber-400">LAUNCHER COCKPIT OS</span>
+          <span id="drawerOtaStatus" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            Auto-Update Wi-Fi Activo
+          </span>
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button id="btnDrawerWifi" type="button" class="px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/50 text-sky-200 text-xs font-semibold">
+            📶 Conectar Wi-Fi
+          </button>
+          <button id="btnDrawerSettings" type="button" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-semibold">
+            ⚙️ Ajustes Android
+          </button>
+          <button id="btnDrawerSyncOta" type="button" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/50 text-emerald-200 text-xs font-semibold">
+            🔄 Actualizar HTML (GitHub)
+          </button>
+          <button id="btnDrawerPrev" type="button" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold">
+            ◀ Tablero
+          </button>
+          <button id="btnDrawerNext" type="button" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold">
+            Tablero ▶
+          </button>
+          <button id="btnExitKiosk" type="button" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-semibold border border-amber-500/40">
+            Salir Modo Kiosco
+          </button>
+          <button id="btnCloseDrawer" type="button" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 text-xs font-semibold">
+            ▲ Ocultar
+          </button>
+        </div>
       </div>
 
       <!-- HIDDEN DOM TELLTALE MIRROR (All telltales are rendered natively inside each dashboard on the Canvas!) -->
@@ -602,39 +654,334 @@
     </section>
   </main>
 
-  <!-- MODAL: ESP32 ARDUINO CODE + TV BOX ANDROID SETUP -->
-  <div id="codeModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
-    <div class="bg-[#0c121e] border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-900/80">
+  <!-- MODAL: CENTRO DE INSTALACIÓN TV BOX LAUNCHER + ANDROID STUDIO + GITHUB OTA + ESP32 -->
+  <div id="codeModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-2 sm:p-5">
+    <div class="bg-[#0b101b] border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-slate-800 bg-slate-900/90">
         <div>
-          <h2 class="font-orbitron font-bold text-sm sm:text-base text-white">Código ESP32 (USB Serial) + Atenuación por Llave de Luces Corsa 2011</h2>
-          <p class="text-xs text-slate-400">Incluye detección del cable de iluminación/luz baja para atenuar la pantalla de noche automáticamente</p>
+          <h2 class="font-orbitron font-bold text-xs sm:text-sm text-white">Centro de Instalación: TV Box Fast-Boot + Android Studio Launcher + GitHub OTA</h2>
+          <p class="text-[11px] text-slate-400">Arranque instantáneo 100% Offline en el auto + actualización automática desde tu repositorio de GitHub por Wi-Fi</p>
         </div>
-        <button id="btnCloseCodeModal" type="button" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
-          Cerrar ✕
+        <div class="flex items-center gap-1.5">
+          <button id="btnOtaCheckNow" type="button" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold">
+            🔄 Sincronizar GitHub OTA
+          </button>
+          <button id="btnCloseCodeModal" type="button" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+            Cerrar ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Tabs -->
+      <div class="flex flex-wrap items-center gap-1 px-4 py-2 bg-slate-950/80 border-b border-slate-800 text-xs">
+        <button id="tabBtnTvBox" type="button" class="modal-tab-btn px-3 py-1 rounded-lg font-semibold bg-amber-500 text-slate-950">
+          1. Limpiar TV Box (ADB Fast-Boot)
+        </button>
+        <button id="tabBtnAndroidKt" type="button" class="modal-tab-btn px-3 py-1 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:text-white">
+          2. Android Studio (MainActivity.kt Offline+GitHub)
+        </button>
+        <button id="tabBtnManifest" type="button" class="modal-tab-btn px-3 py-1 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:text-white">
+          3. AndroidManifest.xml (Modo Launcher)
+        </button>
+        <button id="tabBtnEsp32" type="button" class="modal-tab-btn px-3 py-1 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:text-white">
+          4. Código ESP32 (USB Serial)
         </button>
       </div>
 
-      <div class="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs leading-relaxed text-slate-300">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
-            <h3 class="font-bold text-amber-400 mb-1">1. Conexión USB y Cable de Atenuación Nocturna</h3>
-            <p class="text-slate-300">
-              Conectá el ESP32 por USB a la placa <strong>GJZ7.820.11517</strong>. Cuando encendés la luz de posición o luz baja en la llave del Corsa (<code>PIN_LOW_BEAM = 14</code> o <code>PIN_FOG_POS = 18</code>), el tablero atenúa su brillo automáticamente para no encandilar en ruta nocturna.
-            </p>
+      <!-- Modal Content Body -->
+      <div class="p-4 overflow-y-auto space-y-4 text-xs leading-relaxed text-slate-300">
+
+        <!-- Configurar URL de GitHub OTA en Vivo -->
+        <div class="bg-slate-900/90 border border-indigo-500/40 rounded-xl p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+          <div class="flex-1">
+            <span class="text-[11px] font-bold uppercase text-indigo-300 block">URL Raw de tu repositorio GitHub (Para actualización OTA):</span>
+            <input id="inputGithubRawUrl" type="text" value="https://enfer1998.github.io/velocimetro-/" class="w-full mt-1 px-2.5 py-1 rounded bg-black/80 border border-slate-700 text-cyan-300 font-mono-tech text-xs" />
           </div>
-          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
-            <h3 class="font-bold text-emerald-400 mb-1">2. Comandos ADB para limpiar tu TV Box Android</h3>
-            <p class="text-slate-300">
-              Con la TV Box conectada por ADB, desactivá las animaciones de inicio para arranque instantáneo:
-            </p>
-            <pre class="mt-1.5 p-2 rounded bg-black/70 text-emerald-300 font-mono-tech overflow-x-auto">adb shell settings put global window_animation_scale 0
-adb shell settings put global transition_animation_scale 0
-adb shell setprop debug.sf.nobootanimation 1</pre>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button id="btnSaveGithubUrl" type="button" class="px-3 py-1.5 rounded-lg bg-indigo-500/25 hover:bg-indigo-500/35 border border-indigo-400/50 text-indigo-200 font-semibold">
+              Guardar URL OTA
+            </button>
           </div>
         </div>
 
-        <div>
+        <!-- TAB 1: LIMPIEZA EXTREMA TV BOX (ADB) -->
+        <div id="modalPanelTvBox" class="space-y-3">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+            <h3 class="font-bold text-amber-400 mb-1">Paso 1: Dejar la TV Box ultra liviana y sin animaciones</h3>
+            <p class="text-slate-300 mb-2">
+              Conectá tu PC y la TV Box al mismo Wi-Fi (o por cable USB) y ejecutá estos comandos por <code>adb</code>. Esto apaga las animaciones de Android, elimina el bloqueo de pantalla, desactiva las apps pesadas de fábrica y convierte tu app de Android Studio en el <strong>único Launcher de inicio</strong>:
+            </p>
+            <div class="flex justify-end mb-1">
+              <button id="btnCopyAdbScript" type="button" class="px-3 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-semibold">
+                Copiar Comandos ADB
+              </button>
+            </div>
+            <pre id="adbCodeBlock" class="p-3 rounded-xl bg-black/90 border border-slate-800 text-emerald-300 font-mono-tech text-[11px] overflow-x-auto"># 1. Conectar a la TV Box (reemplazá por la IP de tu TV Box o usá USB)
+adb connect 192.168.100.10:5555
+
+# 2. Velocidad extrema: apagar todas las animaciones y el bootanimation
+adb shell settings put global window_animation_scale 0
+adb shell settings put global transition_animation_scale 0
+adb shell settings put global animator_duration_scale 0
+adb shell setprop debug.sf.nobootanimation 1
+
+# 3. Quitar pantalla de bloqueo y mantener pantalla encendida con contacto
+adb shell locksettings set-disabled true
+adb shell settings put global stay_on_while_plugged_in 7
+
+# 4. Ocultar barras de navegación y estado permanentemente (Modo Inmersivo)
+adb shell settings put global policy_control immersive.full=*
+
+# 5. Desactivar bloatware típico de TV Box para liberar memoria RAM
+adb shell pm disable-user --user 0 com.google.android.youtube.tv
+adb shell pm disable-user --user 0 com.netflix.ninja
+adb shell pm disable-user --user 0 com.android.vending
+adb shell pm disable-user --user 0 com.google.android.leanbacklauncher
+
+# 6. Fijar nuestra app de Android Studio como el Launcher Principal (Home)
+adb shell cmd package set-home-activity com.corsa.cockpitos/.MainActivity</pre>
+          </div>
+        </div>
+
+        <!-- TAB 2: ANDROID STUDIO MAINACTIVITY.KT (OFFLINE-FIRST + GITHUB OTA) -->
+        <div id="modalPanelAndroidKt" class="hidden space-y-3">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+            <h3 class="font-bold text-cyan-300 mb-1">Paso 2: Cómo funciona Offline en el auto y se actualiza desde GitHub</h3>
+            <p class="text-slate-300 mb-2">
+              En Android Studio, guardás este HTML por primera vez en <code>app/src/main/assets/index.html</code>.
+              Al arrancar el auto <strong>sin internet (Offline)</strong>, la app carga instantáneamente la última versión guardada en la memoria interna de la TV Box (<code>cockpit_latest.html</code>) o el archivo de <code>assets</code> en <strong>0.1 segundos</strong>.
+              Cuando la TV Box detecta Wi-Fi (en tu casa o con el hotspot del celular), descarga en segundo plano el <code>index.html</code> nuevo desde tu repositorio de <strong>GitHub</strong>, lo guarda en la memoria interna para uso offline y actualiza la pantalla al instante:
+            </p>
+            <div class="flex justify-end mb-1">
+              <button id="btnCopyKotlinCode" type="button" class="px-3 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-200 font-semibold">
+                Copiar MainActivity.kt
+              </button>
+            </div>
+            <pre id="kotlinCodeBlock" class="p-3 rounded-xl bg-black/90 border border-slate-800 text-slate-200 font-mono-tech text-[11px] overflow-x-auto">package com.corsa.cockpitos
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.os.Bundle
+import android.provider.Settings
+import android.view.View
+import android.view.WindowManager
+import android.webkit.JavascriptInterface
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlin.concurrent.thread
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var webView: WebView
+    private val localHtmlFile by lazy { File(filesDir, "cockpit_latest.html") }
+
+    // Reemplazá por la URL Raw de tu archivo index.html en tu repositorio de GitHub:
+    @Volatile
+    private var githubRawUrl = "https://enfer1998.github.io/velocimetro-/"
+
+    @SuppressLint("SetJavaScriptEnabled")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        hideSystemBars()
+
+        webView = WebView(this)
+        setContentView(webView)
+
+        val ws: WebSettings = webView.settings
+        ws.javaScriptEnabled = true
+        ws.domStorageEnabled = true
+        ws.allowFileAccess = true
+        ws.allowContentAccess = true
+        ws.mediaPlaybackRequiresUserGesture = false
+        ws.cacheMode = WebSettings.LOAD_DEFAULT
+
+        webView.webViewClient = WebViewClient()
+        webView.addJavascriptInterface(CockpitBridge(), "AndroidCockpitBridge")
+
+        // 1. CARGA INSTANTÁNEA OFFLINE-FIRST (0.1s sin internet)
+        loadOfflineCluster()
+
+        // 2. ESCUCHAR CONEXIÓN WI-FI EN TIEMPO REAL:
+        // Apenas activás el Wi-Fi en Ajustes y se conecta, descarga solo el HTML nuevo de GitHub!
+        registerWifiAutoUpdateCallback()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideSystemBars()
+        // Al volver de la pantalla de Ajustes de Wi-Fi al Launcher, verifica si hay actualización
+        syncFromGitHubInBackground(forceReload = false, showFeedback = false)
+    }
+
+    private fun loadOfflineCluster() {
+        if (localHtmlFile.exists() && localHtmlFile.length() > 1000) {
+            webView.loadUrl("file://${localHtmlFile.absolutePath}")
+        } else {
+            webView.loadUrl("file:///android_asset/index.html")
+        }
+    }
+
+    private fun registerWifiAutoUpdateCallback() {
+        try {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val req = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+            cm.registerNetworkCallback(req, object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    // ¡Se conectó el Wi-Fi! Busca y descarga automáticamente el nuevo HTML de GitHub
+                    syncFromGitHubInBackground(forceReload = false, showFeedback = true)
+                }
+            })
+        } catch (_: Exception) {}
+    }
+
+    private fun syncFromGitHubInBackground(forceReload: Boolean, showFeedback: Boolean) {
+        thread {
+            try {
+                val conn = (URL(githubRawUrl).openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 5000
+                    readTimeout = 7000
+                    requestMethod = "GET"
+                    setRequestProperty("Cache-Control", "no-cache")
+                }
+                if (conn.responseCode == 200) {
+                    val newHtml = conn.inputStream.bufferedReader(Charsets.UTF_8).readText()
+                    if (newHtml.contains("&lt;!DOCTYPE html&gt;", ignoreCase = true)) {
+                        val oldHtml = if (localHtmlFile.exists()) localHtmlFile.readText() else ""
+                        if (newHtml != oldHtml || forceReload) {
+                            localHtmlFile.writeText(newHtml, Charsets.UTF_8)
+                            runOnUiThread {
+                                webView.loadUrl("file://${localHtmlFile.absolutePath}")
+                                if (showFeedback) {
+                                    Toast.makeText(this@MainActivity, "✅ Tablero actualizado desde GitHub", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) {
+                // Sin internet: sigue funcionando 100% offline con la versión guardada
+            }
+        }
+    }
+
+    inner class CockpitBridge {
+        @JavascriptInterface
+        fun openWifiSettings() {
+            // Abre directamente el menú de Wi-Fi de Android desde el Launcher
+            try {
+                val intent = Intent(Settings.ACTION_WIFI_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(intent)
+            } catch (e: Exception) {
+                openSystemSettings()
+            }
+        }
+
+        @JavascriptInterface
+        fun openSystemSettings() {
+            // Abre la Configuración General de Android (Wi-Fi, Bluetooth, Sonido, USB, Pantalla)
+            try {
+                val intent = Intent(Settings.ACTION_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(intent)
+            } catch (_: Exception) {}
+        }
+
+        @JavascriptInterface
+        fun checkForGitHubUpdate(customUrl: String?) {
+            if (!customUrl.isNullOrBlank() && customUrl.startsWith("https://")) {
+                githubRawUrl = customUrl.trim()
+            }
+            syncFromGitHubInBackground(forceReload = true, showFeedback = true)
+        }
+    }
+
+    private fun hideSystemBars() {
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            or View.SYSTEM_UI_FLAG_FULLSCREEN
+            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        )
+    }
+
+    override fun onBackPressed() {
+        // En el Launcher bloquea el botón Atrás para no salir por accidente
+    }
+}</pre>
+          </div>
+        </div>
+
+        <!-- TAB 3: ANDROIDMANIFEST.XML (LAUNCHER MODE) -->
+        <div id="modalPanelManifest" class="hidden space-y-3">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+            <h3 class="font-bold text-amber-400 mb-1">Paso 3: Configurar `AndroidManifest.xml` como Home Launcher</h3>
+            <p class="text-slate-300 mb-2">
+              Al agregar las categorías <code>CATEGORY_HOME</code> y <code>CATEGORY_DEFAULT</code> en tu <code>AndroidManifest.xml</code>, cuando la TV Box recibe contacto ni siquiera muestra el menú de Android: bootea directo a tu tablero en orientación horizontal (<code>landscape</code>):
+            </p>
+            <div class="flex justify-end mb-1">
+              <button id="btnCopyManifestCode" type="button" class="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-semibold">
+                Copiar AndroidManifest.xml
+              </button>
+            </div>
+            <pre id="manifestCodeBlock" class="p-3 rounded-xl bg-black/90 border border-slate-800 text-amber-200 font-mono-tech text-[11px] overflow-x-auto">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.corsa.cockpitos"&gt;
+
+    &lt;!-- Permiso para buscar actualizaciones OTA en GitHub cuando hay Wi-Fi --&gt;
+    &lt;uses-permission android:name="android.permission.INTERNET" /&gt;
+    &lt;uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /&gt;
+    &lt;uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /&gt;
+
+    &lt;application
+        android:allowBackup="true"
+        android:label="Corsa Cockpit OS"
+        android:usesCleartextTraffic="true"
+        android:theme="@style/Theme.AppCompat.NoActionBar"&gt;
+
+        &lt;activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden"&gt;
+
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN" /&gt;
+                &lt;!-- Convierte la app en el Launcher Oficial de la TV Box --&gt;
+                &lt;category android:name="android.intent.category.HOME" /&gt;
+                &lt;category android:name="android.intent.category.DEFAULT" /&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+    &lt;/application&gt;
+&lt;/manifest&gt;</pre>
+          </div>
+        </div>
+
+        <!-- TAB 4: SKETCH ESP32 -->
+        <div id="modalPanelEsp32" class="hidden space-y-3">
           <div class="flex items-center justify-between mb-1.5">
             <span class="font-bold text-cyan-300">Sketch completo para ESP32 (`corsa_telemetry_esp32.ino`)</span>
             <button id="btnCopyArduinoCode" type="button" class="px-3 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-200 font-semibold">
@@ -710,6 +1057,7 @@ void loop() {
   }
 }</pre>
         </div>
+
       </div>
     </div>
   </div>
@@ -3385,15 +3733,118 @@ void loop() {
         });
       });
 
-      // Kiosk Mode Toggle
+      // Native Android Launcher Actions (Wi-Fi Settings, System Settings & Auto-OTA on Wi-Fi Connect)
+      function openAndroidWifi() {
+        if (window.AndroidCockpitBridge && typeof window.AndroidCockpitBridge.openWifiSettings === 'function') {
+          window.AndroidCockpitBridge.openWifiSettings();
+        } else {
+          showToast('En la TV Box (Launcher Android), abre directamente Ajustes -> Wi-Fi de Android');
+          document.getElementById('codeModal').classList.remove('hidden');
+          switchModalTab('tabBtnAndroidKt');
+        }
+      }
+
+      function openAndroidSettings() {
+        if (window.AndroidCockpitBridge && typeof window.AndroidCockpitBridge.openSystemSettings === 'function') {
+          window.AndroidCockpitBridge.openSystemSettings();
+        } else {
+          showToast('En la TV Box (Launcher Android), abre la Configuración General del Sistema Android');
+          document.getElementById('codeModal').classList.remove('hidden');
+          switchModalTab('tabBtnAndroidKt');
+        }
+      }
+
+      function triggerOtaSync(isAuto) {
+        const inputEl = document.getElementById('inputGithubRawUrl');
+        const url = inputEl ? inputEl.value.trim() : '';
+        try { if (url) localStorage.setItem('corsa2011_github_ota_url', url); } catch (e) {}
+        const statusBadge = document.getElementById('drawerOtaStatus');
+        if (statusBadge) statusBadge.textContent = 'Buscando actualización en GitHub...';
+
+        if (window.AndroidCockpitBridge && typeof window.AndroidCockpitBridge.checkForGitHubUpdate === 'function') {
+          if (!isAuto) showToast('Conectado al Wi-Fi: Buscando actualización del HTML en GitHub...');
+          window.AndroidCockpitBridge.checkForGitHubUpdate(url);
+        } else if (!isAuto) {
+          showToast('En la TV Box, descarga automáticamente el nuevo index.html de tu GitHub al detectar Wi-Fi');
+        }
+      }
+
+      // Automatically trigger GitHub OTA sync when Wi-Fi connects or when returning from Android Wi-Fi Settings!
+      window.addEventListener('online', () => {
+        showToast('📶 Wi-Fi conectado: Buscando actualización automática en GitHub...');
+        triggerOtaSync(true);
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && navigator.onLine) {
+          triggerOtaSync(true);
+        }
+      });
+
+      document.getElementById('btnLauncherWifi').addEventListener('click', openAndroidWifi);
+      document.getElementById('btnLauncherSettings').addEventListener('click', openAndroidSettings);
+      document.getElementById('btnDrawerWifi').addEventListener('click', openAndroidWifi);
+      document.getElementById('btnDrawerSettings').addEventListener('click', openAndroidSettings);
+      document.getElementById('btnDrawerSyncOta').addEventListener('click', () => triggerOtaSync(false));
+      document.getElementById('btnDrawerPrev').addEventListener('click', () => stepGlobalDesign(-1));
+      document.getElementById('btnDrawerNext').addEventListener('click', () => stepGlobalDesign(1));
+
+      // Kiosk Mode & Swipe-Down Top Drawer (Cortina Deslizable)
       const topToolbar = document.getElementById('topToolbar');
       const controlBench = document.getElementById('controlBench');
       const btnExitKiosk = document.getElementById('btnExitKiosk');
+      const kioskPullZone = document.getElementById('kioskPullZone');
+      const kioskSwipeDrawer = document.getElementById('kioskSwipeDrawer');
+      const cockpitFrameEl = document.getElementById('cockpitFrame');
+
+      function openSwipeDrawer() {
+        kioskSwipeDrawer.classList.add('drawer-open');
+      }
+      function closeSwipeDrawer() {
+        kioskSwipeDrawer.classList.remove('drawer-open');
+      }
+
+      kioskPullZone.addEventListener('click', openSwipeDrawer);
+      document.getElementById('btnCloseDrawer').addEventListener('click', closeSwipeDrawer);
+
+      // Touch & Mouse Swipe-Down Gesture from top edge of cockpit
+      let touchStartY = null;
+      cockpitFrameEl.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length === 1) {
+          const rect = cockpitFrameEl.getBoundingClientRect();
+          const relY = e.touches[0].clientY - rect.top;
+          if (relY < 65) touchStartY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      cockpitFrameEl.addEventListener('touchmove', (e) => {
+        if (touchStartY !== null && e.touches && e.touches.length === 1) {
+          const dy = e.touches[0].clientY - touchStartY;
+          if (dy > 24) {
+            openSwipeDrawer();
+            touchStartY = null;
+          }
+        }
+      }, { passive: true });
+
+      cockpitFrameEl.addEventListener('mousedown', (e) => {
+        const rect = cockpitFrameEl.getBoundingClientRect();
+        if (e.clientY - rect.top < 38) touchStartY = e.clientY;
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (touchStartY !== null && e.clientY - touchStartY > 24) {
+          openSwipeDrawer();
+          touchStartY = null;
+        }
+      });
+      window.addEventListener('mouseup', () => { touchStartY = null; });
 
       document.getElementById('btnKioskMode').addEventListener('click', () => {
         topToolbar.classList.add('hidden');
         controlBench.classList.add('hidden');
-        btnExitKiosk.classList.remove('hidden');
+        kioskPullZone.classList.remove('hidden');
+        closeSwipeDrawer();
+        showToast('Modo Launcher Puro: Deslizá desde el borde superior hacia abajo para abrir Wi-Fi / Ajustes');
         if (document.documentElement.requestFullscreen) {
           document.documentElement.requestFullscreen().catch(() => {});
         }
@@ -3403,25 +3854,63 @@ void loop() {
       btnExitKiosk.addEventListener('click', () => {
         topToolbar.classList.remove('hidden');
         controlBench.classList.remove('hidden');
-        btnExitKiosk.classList.add('hidden');
+        kioskPullZone.classList.add('hidden');
+        closeSwipeDrawer();
         if (document.fullscreenElement && document.exitFullscreen) {
           document.exitFullscreen().catch(() => {});
         }
         setTimeout(resizeCanvas, 80);
       });
 
-      // Code Modal
+      // Code & Deployment Center Modal (4 Tabs + GitHub OTA Bridge)
       const codeModal = document.getElementById('codeModal');
+      const inputGithubRawUrl = document.getElementById('inputGithubRawUrl');
+
+      try {
+        const savedUrl = localStorage.getItem('corsa2011_github_ota_url');
+        if (savedUrl && inputGithubRawUrl) inputGithubRawUrl.value = savedUrl;
+      } catch (e) {}
+
       document.getElementById('btnOpenCodeModal').addEventListener('click', () => {
         codeModal.classList.remove('hidden');
       });
       document.getElementById('btnCloseCodeModal').addEventListener('click', () => {
         codeModal.classList.add('hidden');
       });
-      document.getElementById('btnCopyArduinoCode').addEventListener('click', () => {
-        const text = document.getElementById('arduinoCodeBlock').innerText;
+
+      const modalTabs = [
+        { btn: 'tabBtnTvBox',     panel: 'modalPanelTvBox' },
+        { btn: 'tabBtnAndroidKt', panel: 'modalPanelAndroidKt' },
+        { btn: 'tabBtnManifest',  panel: 'modalPanelManifest' },
+        { btn: 'tabBtnEsp32',     panel: 'modalPanelEsp32' }
+      ];
+
+      function switchModalTab(activeBtnId) {
+        modalTabs.forEach((t) => {
+          const b = document.getElementById(t.btn);
+          const p = document.getElementById(t.panel);
+          if (!b || !p) return;
+          if (t.btn === activeBtnId) {
+            p.classList.remove('hidden');
+            b.className = 'modal-tab-btn px-3 py-1 rounded-lg font-semibold bg-amber-500 text-slate-950';
+          } else {
+            p.classList.add('hidden');
+            b.className = 'modal-tab-btn px-3 py-1 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:text-white';
+          }
+        });
+      }
+
+      modalTabs.forEach((t) => {
+        const b = document.getElementById(t.btn);
+        if (b) b.addEventListener('click', () => switchModalTab(t.btn));
+      });
+
+      function copyBlockById(blockId, msg) {
+        const el = document.getElementById(blockId);
+        if (!el) return;
+        const text = el.innerText;
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(() => showToast('Código ESP32 copiado al portapapeles'));
+          navigator.clipboard.writeText(text).then(() => showToast(msg));
         } else {
           const ta = document.createElement('textarea');
           ta.value = text;
@@ -3429,7 +3918,37 @@ void loop() {
           ta.select();
           document.execCommand('copy');
           document.body.removeChild(ta);
-          showToast('Código ESP32 copiado al portapapeles');
+          showToast(msg);
+        }
+      }
+
+      document.getElementById('btnCopyAdbScript').addEventListener('click', () => {
+        copyBlockById('adbCodeBlock', 'Comandos ADB copiados al portapapeles');
+      });
+      document.getElementById('btnCopyKotlinCode').addEventListener('click', () => {
+        copyBlockById('kotlinCodeBlock', 'MainActivity.kt copiado al portapapeles');
+      });
+      document.getElementById('btnCopyManifestCode').addEventListener('click', () => {
+        copyBlockById('manifestCodeBlock', 'AndroidManifest.xml copiado al portapapeles');
+      });
+      document.getElementById('btnCopyArduinoCode').addEventListener('click', () => {
+        copyBlockById('arduinoCodeBlock', 'Código ESP32 copiado al portapapeles');
+      });
+
+      document.getElementById('btnSaveGithubUrl').addEventListener('click', () => {
+        const url = inputGithubRawUrl.value.trim();
+        try { localStorage.setItem('corsa2011_github_ota_url', url); } catch (e) {}
+        showToast('URL de GitHub OTA guardada para próximas actualizaciones');
+      });
+
+      document.getElementById('btnOtaCheckNow').addEventListener('click', () => {
+        const url = inputGithubRawUrl.value.trim();
+        try { localStorage.setItem('corsa2011_github_ota_url', url); } catch (e) {}
+        if (window.AndroidCockpitBridge && typeof window.AndroidCockpitBridge.checkForGitHubUpdate === 'function') {
+          showToast('Descargando última versión desde GitHub hacia memoria interna...');
+          window.AndroidCockpitBridge.checkForGitHubUpdate(url);
+        } else {
+          showToast('En la TV Box (App Android Studio), este botón descarga y guarda el HTML de GitHub para uso 100% Offline');
         }
       });
 
