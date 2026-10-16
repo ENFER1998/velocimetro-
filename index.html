@@ -1,21 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
-<!-- CHEVROLET_COCKPIT_V4 | COCKPIT_ES5_READY -->
+<!-- CHEVROLET_COCKPIT_V6 | COCKPIT_ES5_READY -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Chevrolet Digital Cockpit OS — Instrument Cluster &amp; Infotainment</title>
+  <title>Chevrolet Digital Cockpit OS — Master 18-Cluster Edition</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@500;600;700;800;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <!-- Leaflet CSS/JS opcional para mapa oscuro en vivo cuando hay conexión Wi-Fi/GPS (falla silenciosamente si está offline) -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Cormorant+Garamond:wght@600;700&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@500;600;700;800;900&family=Playfair+Display:wght@600;700&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" async></script>
   <style>
-    /* ==========================================================================
-       CHEVROLET DIGITAL COCKPIT OS v4.0 — MINIMALIST OEM AUTOMOTIVE UI
-       100% Compatible con WebView Android 5/6/7/8/9+ (ES5 + Flexbox estándar)
-       ========================================================================== */
     * {
       box-sizing: border-box;
       -webkit-user-select: none;
@@ -37,11 +32,45 @@
     .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
     .hidden { display: none !important; }
 
+    /* Texturas de Fondo para las 6 Familias de Tableros */
+    .bg-classic-cluster {
+      background: radial-gradient(circle at 50% 45%, #162434 0%, #0a111a 68%, #04070b 100%) !important;
+    }
+    .bg-walnut-luxury {
+      background:
+        radial-gradient(ellipse at 30% 40%, rgba(146, 64, 14, 0.42) 0%, transparent 55%),
+        radial-gradient(ellipse at 75% 60%, rgba(120, 53, 15, 0.45) 0%, transparent 50%),
+        repeating-linear-gradient(12deg, #2b1306 0px, #3b1a09 14px, #240f04 28px, #331607 42px) !important;
+    }
+    .bg-brushed-metal {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.42) 100%),
+        repeating-linear-gradient(90deg, #1d232a 0px, #252c35 2px, #181e24 4px) !important;
+    }
+    .bg-carbon {
+      background-color: #07090e !important;
+      background-image:
+        radial-gradient(rgba(255,255,255,0.045) 15%, transparent 16%),
+        radial-gradient(rgba(255,255,255,0.045) 15%, transparent 16%) !important;
+      background-size: 12px 12px !important;
+      background-position: 0 0, 6px 6px !important;
+    }
+    .bg-minimal-glass {
+      background: radial-gradient(circle at 50% 0%, #0d1322 0%, #05080f 65%, #030408 100%) !important;
+    }
+    .bg-retro-grid {
+      background-color: #06030f !important;
+      background-image:
+        linear-gradient(rgba(0, 255, 204, 0.065) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 0, 128, 0.065) 1px, transparent 1px) !important;
+      background-size: 24px 24px !important;
+    }
+
     #appRoot {
       position: relative;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at 50% 0%, #0d1322 0%, #05080f 65%, #030408 100%);
+      background: #04060a;
       display: -webkit-flex;
       display: flex;
       -webkit-flex-direction: column;
@@ -51,7 +80,6 @@
       overflow: hidden;
     }
 
-    /* Capa de Atenuación Nocturna Automática (Dimmer OEM) */
     #nightDimOverlay {
       position: fixed;
       top: 0;
@@ -65,7 +93,6 @@
       transition: opacity 0.4s ease;
     }
 
-    /* Cortina / Pestaña Superior Deslizable para Modo Quiosco Puro */
     #kioskTopTouchZone {
       position: absolute;
       top: 0;
@@ -95,7 +122,6 @@
       width: 96px;
     }
 
-    /* ESCENARIO PRINCIPAL (100% Velocímetro en Quiosco o 50/50 Pantalla Dividida) */
     #mainStage {
       position: relative;
       -webkit-flex: 1;
@@ -109,7 +135,6 @@
       overflow: hidden;
     }
 
-    /* Mitad Izquierda (o 100% en Modo Quiosco): Tablero de Instrumentos Chevrolet */
     #clusterSide {
       position: relative;
       width: 100%;
@@ -120,11 +145,11 @@
       flex-direction: column;
       -webkit-justify-content: space-between;
       justify-content: space-between;
-      transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: width 0.26s ease;
     }
     #mainStage.split-active #clusterSide {
       width: 50%;
-      border-right: 1px solid rgba(148, 163, 184, 0.12);
+      border-right: 1px solid rgba(148, 163, 184, 0.14);
     }
 
     #canvasContainer {
@@ -143,13 +168,12 @@
       cursor: pointer;
     }
 
-    /* Cinta Inferior Minimalista de Telemetría (Integrada al pie del velocímetro) */
     #telemetryBar {
       height: 40px;
       min-height: 40px;
       width: 100%;
-      background: rgba(6, 9, 16, 0.88);
-      border-top: 1px solid rgba(148, 163, 184, 0.12);
+      background: rgba(6, 9, 16, 0.9);
+      border-top: 1px solid rgba(148, 163, 184, 0.14);
       padding: 0 16px;
       display: -webkit-flex;
       display: flex;
@@ -187,7 +211,6 @@
       margin-left: 4px;
     }
 
-    /* Mitad Derecha (50% en Modo Split): Mapa GPS / Multimedia / Launcher de Apps */
     #splitRightSide {
       position: relative;
       width: 50%;
@@ -203,7 +226,6 @@
       display: flex;
     }
 
-    /* Cabecera Minimalista del Panel Derecho */
     .split-header {
       height: 46px;
       min-height: 46px;
@@ -223,10 +245,6 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #cbd5e1;
-      display: -webkit-flex;
-      display: flex;
-      -webkit-align-items: center;
-      align-items: center;
     }
     .split-close-btn {
       background: rgba(30, 41, 59, 0.55);
@@ -252,9 +270,6 @@
       overflow-y: auto;
     }
 
-    /* ==========================================================================
-       VISTA 1 DEL PANEL DIVIDIDO: NAVEGACIÓN GPS INTEGRADA + GOOGLE MAPS / WAZE
-       ========================================================================== */
     #mapSplitWrapper {
       position: relative;
       width: 100%;
@@ -289,7 +304,6 @@
       height: 100%;
       z-index: 5;
     }
-    /* Tarjeta flotante de navegación sobre el mapa */
     .nav-hud-overlay {
       position: absolute;
       top: 12px;
@@ -335,13 +349,6 @@
       -webkit-align-items: center;
       align-items: center;
       cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .oem-action-btn:hover, .oem-action-btn:focus {
-      background: rgba(56, 189, 248, 0.16);
-      border-color: #38bdf8;
-      color: #ffffff;
-      outline: none;
     }
     .oem-action-btn.primary {
       background: rgba(56, 189, 248, 0.18);
@@ -349,9 +356,6 @@
       color: #38bdf8;
     }
 
-    /* ==========================================================================
-       VISTA 2 DEL PANEL DIVIDIDO: REPRODUCTOR MULTIMEDIA AUTOMOTRIZ
-       ========================================================================== */
     .media-stage-container {
       padding: 20px;
       height: 100%;
@@ -400,17 +404,8 @@
       border-color: #38bdf8;
       color: #38bdf8;
     }
-    .transport-btn:hover {
-      border-color: #38bdf8;
-      background: rgba(56, 189, 248, 0.25);
-    }
 
-    /* ==========================================================================
-       VISTA 3 DEL PANEL DIVIDIDO: CAJÓN DE APLICACIONES AUTOMOTRIZ (SVG LIMPIO)
-       ========================================================================== */
-    .apps-stage-container {
-      padding: 14px;
-    }
+    .apps-stage-container { padding: 14px; }
     .apps-filter-bar {
       display: -webkit-flex;
       display: flex;
@@ -461,12 +456,6 @@
       align-items: center;
       cursor: pointer;
       text-align: center;
-      transition: all 0.15s ease;
-    }
-    .oem-app-card:hover, .oem-app-card:focus {
-      background: rgba(24, 35, 56, 0.95);
-      border-color: rgba(56, 189, 248, 0.55);
-      outline: none;
     }
     .oem-app-icon {
       width: 40px;
@@ -502,16 +491,13 @@
       white-space: nowrap;
     }
 
-    /* ==========================================================================
-       DOCK INFERIOR MINIMALISTA (OCULTABLE EN MODO QUIOSCO PURO)
-       ========================================================================== */
     #minimalDockWrapper {
       height: 52px;
       min-height: 52px;
       width: 100%;
       background: #05080f;
       border-top: 1px solid rgba(148, 163, 184, 0.12);
-      padding: 0 18px;
+      padding: 0 16px;
       display: -webkit-flex;
       display: flex;
       -webkit-align-items: center;
@@ -519,7 +505,6 @@
       -webkit-justify-content: space-between;
       justify-content: space-between;
       z-index: 40;
-      transition: height 0.25s ease, opacity 0.25s ease;
     }
     body.kiosk-pure-mode #minimalDockWrapper {
       display: none !important;
@@ -536,36 +521,27 @@
       border: 1px solid transparent;
       color: #94a3b8;
       height: 38px;
-      padding: 0 13px;
+      padding: 0 11px;
       border-radius: 9px;
       font-size: 11.5px;
       font-weight: 600;
-      letter-spacing: 0.03em;
       display: -webkit-flex;
       display: flex;
       -webkit-align-items: center;
       align-items: center;
       cursor: pointer;
-      margin-right: 6px;
-      transition: all 0.15s ease;
+      margin-right: 5px;
     }
-    .dock-item:last-child {
-      margin-right: 0;
-    }
+    .dock-item:last-child { margin-right: 0; }
     .dock-item svg {
       width: 16px;
       height: 16px;
-      margin-right: 7px;
+      margin-right: 6px;
       stroke: currentColor;
       fill: none;
       stroke-width: 1.9;
       stroke-linecap: round;
       stroke-linejoin: round;
-    }
-    .dock-item:hover, .dock-item:focus {
-      color: #f8fafc;
-      background: rgba(30, 41, 59, 0.55);
-      outline: none;
     }
     .dock-item.active {
       color: #38bdf8;
@@ -578,9 +554,6 @@
       border-color: #ef4444;
     }
 
-    /* ==========================================================================
-       MODALES DE CONFIGURACIÓN / CALIBRACIÓN / CÓDIGO APK
-       ========================================================================== */
     .modal-backdrop {
       position: fixed;
       top: 0;
@@ -670,21 +643,9 @@
       text-align: center;
     }
     .grid-btn.active {
-      background: rgba(56, 189, 248, 0.2);
+      background: rgba(56, 189, 248, 0.22);
       border-color: #38bdf8;
       color: #ffffff;
-    }
-    pre.code-block {
-      background: #04060b;
-      border: 1px solid rgba(148, 163, 184, 0.18);
-      border-radius: 10px;
-      padding: 12px;
-      color: #e2e8f0;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 11px;
-      overflow-x: auto;
-      white-space: pre;
-      margin-top: 8px;
     }
     #toastMsg {
       position: fixed;
@@ -699,31 +660,26 @@
       border-radius: 999px;
       font-size: 11.5px;
       font-weight: 600;
-      letter-spacing: 0.02em;
       box-shadow: 0 10px 30px rgba(0,0,0,0.85);
     }
   </style>
 </head>
 <body>
   <div id="appRoot">
-    <!-- Atenuador Nocturno Automático -->
     <div id="nightDimOverlay"></div>
 
-    <!-- Zona Superior Sutil: Tocando o deslizando desde arriba muestra/oculta la barra inferior (Modo Quiosco) -->
-    <div id="kioskTopTouchZone" title="Tocar o deslizar para mostrar/ocultar controles">
+    <!-- Pestaña Superior para Modo Quiosco Puro -->
+    <div id="kioskTopTouchZone" title="Tocar para mostrar u ocultar la barra inferior">
       <div id="kioskTopHandleBar"></div>
     </div>
 
     <!-- ESCENARIO PRINCIPAL: 100% VELOCÍMETRO O 50/50 PANTALLA DIVIDIDA -->
     <main id="mainStage">
-
-      <!-- MITAD IZQUIERDA (O 100% EN MODO QUIOSCO): VELOCÍMETRO DIGITAL CHEVROLET -->
       <section id="clusterSide">
-        <div id="canvasContainer">
+        <div id="canvasContainer" class="bg-minimal-glass">
           <canvas id="clusterCanvas"></canvas>
         </div>
 
-        <!-- Cinta Inferior Minimalista de Telemetría -->
         <div id="telemetryBar">
           <div class="tele-item">
             <span class="tele-lbl">Combustible</span>
@@ -736,8 +692,8 @@
           </div>
           <div class="tele-item">
             <span class="tele-lbl">Consumo</span>
-            <span id="ReadoutInstKml" class="tele-val font-orbitron">13.2 km/L</span>
-            <span id="ReadoutInstL100" class="tele-sub font-mono-tech">7.6 L/100</span>
+            <span id="ReadoutInstKml" class="tele-val font-orbitron">0.0 km/L</span>
+            <span id="ReadoutInstL100" class="tele-sub font-mono-tech">0.0 L/100</span>
           </div>
           <div class="tele-item">
             <span class="tele-lbl">Temp. Motor</span>
@@ -745,76 +701,64 @@
           </div>
           <div class="tele-item">
             <span class="tele-lbl">Batería</span>
-            <span id="ReadoutVoltage" class="tele-val font-mono-tech">14.1V</span>
+            <span id="ReadoutVoltage" class="tele-val font-mono-tech">12.6V</span>
           </div>
           <div class="tele-item">
             <span class="tele-lbl">Odómetro</span>
             <span id="ReadoutOdo" class="tele-val font-mono-tech">148,920 km</span>
-            <span id="ReadoutTrip" class="tele-sub font-mono-tech">T: 124.5</span>
+            <span id="ReadoutTrip" class="tele-sub font-mono-tech">T: 0.0</span>
           </div>
         </div>
       </section>
 
-      <!-- MITAD DERECHA (50% AL ACTIVAR MAPA, MULTIMEDIA O APLICACIONES) -->
+      <!-- MITAD DERECHA (50% AL ACTIVAR MAPA, AUDIO O APLICACIONES) -->
       <section id="splitRightSide">
         <div class="split-header">
-          <div class="split-title">
-            <span id="splitPanelTitle">NAVEGACIÓN GPS</span>
-          </div>
+          <div class="split-title"><span id="splitPanelTitle">NAVEGACIÓN GPS</span></div>
           <div class="dock-group">
             <button id="btnAddCustomApp" type="button" class="split-close-btn hidden" style="margin-right:6px;">+ Añadir App</button>
             <button id="btnCloseSplitPane" type="button" class="split-close-btn">Expandir Velocímetro ✕</button>
           </div>
         </div>
 
-        <!-- PANEL DIVIDIDO 1: MAPA Y NAVEGACIÓN INTEGRADA (50% DE LA PANTALLA) -->
         <div id="splitViewMap" class="split-content">
           <div id="mapSplitWrapper">
             <div id="liveMapCanvasArea">
-              <!-- Mapa Oscuro Interactivo (Leaflet Carto Dark) cuando hay red -->
               <div id="leafletMapDiv"></div>
-              <!-- Radar Vectorial GPS de Respaldo (100% Offline) -->
               <canvas id="offlineNavRadarCanvas"></canvas>
-
-              <!-- Tarjeta Superior de Telemetría GPS -->
               <div class="nav-hud-overlay">
                 <div>
-                  <div style="font-size:10px;font-weight:700;color:#38bdf8;letter-spacing:0.08em;text-transform:uppercase;">ASISTENTE DE RUTA CHEVROLET</div>
-                  <div id="navCoordText" style="font-size:13px;font-weight:700;color:#f8fafc;margin-top:2px;">GPS Activo • Seguimiento en Tiempo Real</div>
+                  <div style="font-size:10px;font-weight:700;color:#38bdf8;letter-spacing:0.08em;text-transform:uppercase;">NAVEGACIÓN GPS CHEVROLET</div>
+                  <div id="navCoordText" style="font-size:13px;font-weight:700;color:#f8fafc;margin-top:2px;">GPS Activo • Seguimiento en Ruta</div>
                 </div>
                 <div style="text-align:right;">
-                  <div id="navSpeedHud" class="font-orbitron" style="font-size:18px;font-weight:800;color:#38bdf8;">82 km/h</div>
+                  <div id="navSpeedHud" class="font-orbitron" style="font-size:18px;font-weight:800;color:#38bdf8;">0 km/h</div>
                   <div id="navRangeHud" style="font-size:10px;color:#94a3b8;">Autonomía: 448 km</div>
                 </div>
               </div>
             </div>
-
-            <!-- Barra Inferior del Mapa: Lanzar Google Maps / Waze en Pantalla Dividida o Completa -->
             <div class="nav-bottom-bar">
               <div class="dock-group">
                 <button id="btnCenterGpsMap" type="button" class="oem-action-btn" style="margin-right:6px;">Centrar GPS</button>
                 <button id="btnLaunchGMapsSplit" type="button" class="oem-action-btn primary" style="margin-right:6px;">Google Maps (Mitad de Pantalla)</button>
                 <button id="btnLaunchWazeSplit" type="button" class="oem-action-btn">Waze</button>
               </div>
-              <button id="btnLaunchGMapsFull" type="button" class="oem-action-btn">Abrir Mapa Completo</button>
+              <button id="btnLaunchGMapsFull" type="button" class="oem-action-btn">Mapa Completo</button>
             </div>
           </div>
         </div>
 
-        <!-- PANEL DIVIDIDO 2: SISTEMA DE AUDIO Y MULTIMEDIA -->
         <div id="splitViewMedia" class="split-content hidden">
           <div class="media-stage-container">
             <div class="now-playing-card">
               <div style="display:flex;justify-content:space-between;align-items:center;">
                 <span style="font-size:10px;font-weight:700;letter-spacing:0.1em;color:#38bdf8;text-transform:uppercase;">CHEVROLET MYLINK AUDIO</span>
-                <span id="mediaStateLabel" style="font-size:10.5px;color:#94a3b8;font-weight:600;">CONECTADO</span>
+                <span id="mediaStateLabel" style="font-size:10.5px;color:#94a3b8;font-weight:600;">ACTIVO</span>
               </div>
               <div style="margin:18px 0;">
-                <div style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">Audio Principal del Vehículo</div>
-                <div style="font-size:12px;color:#64748b;margin-top:4px;">Control directo sobre Bluetooth, Spotify, Reproductor USB y Radio</div>
+                <div style="font-size:18px;font-weight:700;color:#ffffff;">Sistema de Audio del Vehículo</div>
+                <div style="font-size:12px;color:#64748b;margin-top:4px;">Control directo de reproducción y volumen del sistema Android</div>
               </div>
-
-              <!-- Controles de Transporte SVG Limpios -->
               <div class="transport-row">
                 <button type="button" data-mediacmd="prev" class="transport-btn" title="Anterior">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
@@ -826,17 +770,14 @@
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
                 </button>
               </div>
-
-              <!-- Control de Volumen del Sistema -->
               <div class="grid-4" style="margin-top:12px;">
                 <button type="button" data-mediacmd="vol_down" class="grid-btn" style="width:calc(33.33% - 8px);">Volumen −</button>
                 <button type="button" data-mediacmd="mute" class="grid-btn" style="width:calc(33.33% - 8px);">Silenciar</button>
                 <button type="button" data-mediacmd="vol_up" class="grid-btn active" style="width:calc(33.33% - 8px);">Volumen +</button>
               </div>
             </div>
-
             <div class="settings-section" style="margin-bottom:0;">
-              <div class="settings-sec-title"><span>FUENTES DE AUDIO Y APLICACIONES DE MÚSICA</span></div>
+              <div class="settings-sec-title"><span>APLICACIONES DE MÚSICA</span></div>
               <div class="grid-4">
                 <button type="button" data-quickpkg="com.spotify.music" class="grid-btn">Spotify</button>
                 <button type="button" data-quickpkg="com.google.android.apps.youtube.music" class="grid-btn">YouTube Music</button>
@@ -847,7 +788,6 @@
           </div>
         </div>
 
-        <!-- PANEL DIVIDIDO 3: LAUNCHER DE APLICACIONES ANDROID DEL VEHÍCULO -->
         <div id="splitViewApps" class="split-content hidden">
           <div class="apps-stage-container">
             <div class="apps-filter-bar">
@@ -866,92 +806,97 @@
       </section>
     </main>
 
-    <!-- DOCK INFERIOR MINIMALISTA DE GRADO AUTOMOTRIZ -->
+    <!-- DOCK INFERIOR MINIMALISTA CHEVROLET -->
     <footer id="minimalDockWrapper">
-      <!-- Izquierda: Identidad Chevrolet + Estado Reloj/Temperatura -->
       <div class="dock-group">
-        <div style="display:flex;align-items:center;margin-right:14px;">
-          <!-- Emblema Vectorial Chevrolet Bowtie -->
-          <svg width="34" height="14" viewBox="0 0 68 26" style="margin-right:8px;">
+        <div style="display:flex;align-items:center;margin-right:12px;">
+          <svg width="32" height="13" viewBox="0 0 68 26" style="margin-right:7px;">
             <polygon points="24,2 44,2 44,8 65,8 61,18 44,18 44,24 24,24 24,18 3,18 7,8 24,8" fill="none" stroke="#cbd5e1" stroke-width="2.2" stroke-linejoin="round"/>
             <polygon points="26,5 42,5 42,10 60,10 57,16 42,16 42,21 26,21 26,16 8,16 11,10 26,10" fill="#d4af37" opacity="0.88"/>
           </svg>
-          <span class="font-orbitron" style="font-size:11px;font-weight:700;letter-spacing:0.12em;color:#cbd5e1;">CHEVROLET</span>
+          <span class="font-orbitron" style="font-size:10.5px;font-weight:700;letter-spacing:0.12em;color:#cbd5e1;">CHEVROLET</span>
         </div>
-        <span id="liveClockBadge" class="font-mono-tech" style="font-size:12px;color:#94a3b8;margin-right:12px;">10:00</span>
-        <span id="connBadge" style="font-size:10px;color:#38bdf8;border:1px solid rgba(56,189,248,0.3);padding:2px 8px;border-radius:999px;">ECU / SIM</span>
+        <span id="liveClockBadge" class="font-mono-tech" style="font-size:12px;color:#94a3b8;margin-right:10px;">10:00</span>
+        <span id="connBadge" style="font-size:10px;color:#94a3b8;border:1px solid rgba(148,163,184,0.3);padding:2px 8px;border-radius:999px;cursor:pointer;" title="Estado de conexión ESP32-C3 Super Mini">ESP32-C3 EN ESPERA</span>
       </div>
 
-      <!-- Centro: Modos Principales (Velocímetro 100% | Mapa 50/50 | Audio 50/50 | Aplicaciones 50/50) -->
       <div class="dock-group">
-        <button id="dockBtnClusterOnly" type="button" class="dock-item active" title="Mostrar únicamente el Velocímetro (100%)">
+        <button id="dockBtnClusterOnly" type="button" class="dock-item active">
           <svg viewBox="0 0 24 24"><path d="M12 14l4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
           <span>Velocímetro</span>
         </button>
-        <button id="dockBtnNavSplit" type="button" class="dock-item" title="Dividir pantalla 50/50: Velocímetro + Mapa GPS">
+        <button id="dockBtnNavSplit" type="button" class="dock-item">
           <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
           <span>Mapa 50/50</span>
         </button>
-        <button id="dockBtnMediaSplit" type="button" class="dock-item" title="Dividir pantalla 50/50: Velocímetro + Audio">
+        <button id="dockBtnMediaSplit" type="button" class="dock-item">
           <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
           <span>Audio</span>
         </button>
-        <button id="dockBtnAppsSplit" type="button" class="dock-item" title="Dividir pantalla 50/50: Velocímetro + Aplicaciones">
+        <button id="dockBtnAppsSplit" type="button" class="dock-item">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
           <span>Aplicaciones</span>
         </button>
       </div>
 
-      <!-- Derecha: Estilo de Tablero (1-3), Modo Quiosco Puro, Balizas y Configuración -->
       <div class="dock-group">
-        <button id="btnCycleClusterStyle" type="button" class="dock-item" title="Cambiar diseño del velocímetro (Minimal / RS / Agujas)">
+        <button id="btnPrevClusterStyle" type="button" class="dock-item" title="Tablero Anterior" style="padding:0 9px;">◀</button>
+        <button id="btnOpenThemesGallery" type="button" class="dock-item active" title="Abrir Galería de los 18 Diseños de Tablero">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/></svg>
-          <span id="lblStyleShort">Minimal</span>
+          <span id="lblStyleShort">1/18 Minimal</span>
         </button>
-        <button id="btnPureKiosk" type="button" class="dock-item" title="Modo Quiosco Puro: Ocultar barra inferior (tocar borde superior para volver)">
+        <button id="btnNextClusterStyle" type="button" class="dock-item" title="Siguiente Tablero" style="padding:0 9px;">▶</button>
+        <button id="btnPureKiosk" type="button" class="dock-item" title="Modo Quiosco Puro (100% Velocímetro)">
           <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
           <span>Quiosco</span>
         </button>
-        <button id="btnHazardToggle" type="button" class="dock-item hazard-btn" title="Balizas de emergencia">
+        <button id="btnHazardToggle" type="button" class="dock-item hazard-btn" title="Balizas">
           <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
         </button>
-        <button id="btnOpenSettingsModal" type="button" class="dock-item" title="Configuración del vehículo, sensores y código APK">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <button id="btnOpenSettingsModal" type="button" class="dock-item" title="Galería de 18 Tableros y Conexión ESP32-C3">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
       </div>
     </footer>
 
-    <!-- MODAL 1: CONFIGURACIÓN DEL VEHÍCULO, SENSORES Y SISTEMA -->
+    <!-- MODAL DE GALERÍA DE 18 TABLEROS Y CONFIGURACIÓN DEL VEHÍCULO (SIN SIMULADOR NI CÓDIGO APK) -->
     <div id="settingsModal" class="modal-backdrop hidden">
       <div class="modal-card">
         <div class="modal-head">
-          <div style="display:flex;align-items:center;">
-            <strong class="font-orbitron" style="font-size:13px;letter-spacing:0.08em;color:#f8fafc;">CONFIGURACIÓN DEL VEHÍCULO Y CALIBRACIÓN</strong>
-          </div>
-          <div class="dock-group">
-            <button id="btnOpenApkModalFromSettings" type="button" class="oem-action-btn primary" style="margin-right:8px;height:32px;">Código APK / Android Studio</button>
-            <button id="btnCloseSettingsModal" type="button" class="split-close-btn">Cerrar ✕</button>
-          </div>
+          <strong class="font-orbitron" style="font-size:13px;letter-spacing:0.08em;color:#f8fafc;">GALERÍA DE 18 TABLEROS &amp; CONEXIÓN ESP32-C3 SUPER MINI</strong>
+          <button id="btnCloseSettingsModal" type="button" class="split-close-btn">Cerrar ✕</button>
         </div>
 
         <div class="modal-body">
-          <!-- 1. Selección de Diseño de Tablero Chevrolet (3 Modos Minimalistas Profesionales) -->
+          <!-- 1. Colección Maestra de 18 Diseños de Tableros -->
           <div class="settings-section">
             <div class="settings-sec-title">
-              <span>DISEÑO DEL TABLERO DE INSTRUMENTOS</span>
-              <button id="btnSweepFromSettings" type="button" class="split-close-btn">Test Contacto / Barrido</button>
+              <span>COLECCIÓN MAESTRA DE 18 TABLEROS (OEM, CLÁSICOS, MADERA, GT, VIRTUAL, RETRO Y NIXIE)</span>
+              <button id="btnSweepFromSettings" type="button" class="split-close-btn">Contacto / Barrido de Agujas</button>
             </div>
-            <div class="grid-4">
-              <button id="styleBtn0" type="button" class="grid-btn active" style="width:calc(33.33% - 8px);">1. Chevrolet Minimal Arc</button>
-              <button id="styleBtn1" type="button" class="grid-btn" style="width:calc(33.33% - 8px);">2. Chevrolet RS Performance</button>
-              <button id="styleBtn2" type="button" class="grid-btn" style="width:calc(33.33% - 8px);">3. Chevrolet Dual Gauge OEM</button>
+            <div id="masterThemesGrid" class="grid-4"></div>
+          </div>
+
+          <!-- 2. Conexión en Tiempo Real con ESP32-C3 Super Mini (USB-C Serial + Wi-Fi AP) -->
+          <div class="settings-section">
+            <div class="settings-sec-title">
+              <span>CONEXIÓN EN TIEMPO REAL — ESP32-C3 SUPER MINI</span>
+              <span id="espStatusText" style="color:#34d399;">Auto-detección activa</span>
+            </div>
+            <div class="grid-4" style="margin-bottom:8px;">
+              <button id="btnConnectSerial" type="button" class="grid-btn active" style="width:calc(50% - 8px);">Conectar ESP32-C3 por Cable USB-C (115200)</button>
+              <button id="btnToggleWifiPoll" type="button" class="grid-btn active" style="width:calc(50% - 8px);">Wi-Fi ESP32-C3 (192.168.4.1): ACTIVO</button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:11px;color:#94a3b8;">Endpoint Wi-Fi del ESP32-C3 Super Mini:</span>
+              <input id="inputEsp32HttpUrl" type="text" value="http://192.168.4.1/telemetry" style="width:62%;padding:5px 8px;border-radius:6px;background:#05080f;border:1px solid rgba(148,163,184,0.25);color:#38bdf8;font-family:monospace;font-size:11px;" />
             </div>
           </div>
 
-          <!-- 2. Conectividad del Sistema Android y Brillo Nocturno -->
-          <div class="settings-section">
+          <!-- 3. Ajustes del Sistema Android y Atenuación Nocturna -->
+          <div class="settings-section" style="margin-bottom:0;">
             <div class="settings-sec-title">
-              <span>SISTEMA ANDROID, BRILLO NOCTURNO Y HARDWARE ESP32</span>
+              <span>SISTEMA ANDROID &amp; ATENUACIÓN NOCTURNA AUTOMÁTICA</span>
               <select id="selectDimmerMode" style="background:#080c16;color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:6px;padding:3px 8px;font-size:11px;">
                 <option value="auto_both">Dimmer: Auto (Luces o Hora)</option>
                 <option value="auto_lights">Dimmer: Solo con Luces Bajas</option>
@@ -964,70 +909,21 @@
               <button type="button" data-sysintent="bluetooth" class="grid-btn">Bluetooth</button>
               <button type="button" data-sysintent="sound" class="grid-btn">Sonido</button>
               <button type="button" data-sysintent="settings" class="grid-btn">Ajustes Android</button>
-              <button id="btnConnectSerial" type="button" class="grid-btn active">Conectar ESP32 USB</button>
-              <button id="btnSyncGitHubQuick" type="button" class="grid-btn">Actualizar OTA (GitHub)</button>
               <button id="btnAudioToggle" type="button" class="grid-btn">Sonido Giros: ON</button>
+              <button id="btnClassicColor" type="button" class="grid-btn">Luz Clásica: Ámbar</button>
               <button id="btnResetTrip" type="button" class="grid-btn">Reiniciar Trip (0.0)</button>
+              <button id="btnSyncGitHubQuick" type="button" class="grid-btn">Actualizar OTA</button>
             </div>
             <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
               <span style="font-size:11px;color:#94a3b8;">Nivel de Brillo en Modo Nocturno: <strong id="lblNightBrightness" style="color:#38bdf8;">55%</strong></span>
               <input id="sliderNightBrightness" type="range" min="20" max="90" step="1" value="55" style="width:55%;" />
             </div>
           </div>
-
-          <!-- 3. Prueba de Testigos del Tablero -->
-          <div class="settings-section">
-            <div class="settings-sec-title"><span>PRUEBA MANUAL DE TESTIGOS DEL TABLERO</span></div>
-            <div class="grid-4">
-              <button type="button" data-telltale="turnLeft" class="grid-btn telltale-btn">Giro Izquierdo</button>
-              <button type="button" data-telltale="turnRight" class="grid-btn telltale-btn">Giro Derecho</button>
-              <button type="button" data-telltale="lowBeam" class="grid-btn telltale-btn">Luz Baja</button>
-              <button type="button" data-telltale="highBeam" class="grid-btn telltale-btn">Luz Alta</button>
-              <button type="button" data-telltale="footBrake" class="grid-btn telltale-btn">Freno de Pie</button>
-              <button type="button" data-telltale="handbrake" class="grid-btn telltale-btn">Freno de Mano</button>
-              <button type="button" data-telltale="checkEngine" class="grid-btn telltale-btn">Check Engine</button>
-              <button type="button" data-telltale="oilWarn" class="grid-btn telltale-btn">Presión Aceite</button>
-              <button type="button" data-telltale="batteryWarn" class="grid-btn telltale-btn">Batería</button>
-              <button type="button" data-telltale="doorOpen" class="grid-btn telltale-btn">Puerta Abierta</button>
-              <button type="button" data-telltale="seatbelt" class="grid-btn telltale-btn">Cinturón</button>
-              <button type="button" data-telltale="lowFuel" class="grid-btn telltale-btn">Reserva Nafta</button>
-            </div>
-          </div>
-
-          <!-- 4. Simulador de Sensores (Para pruebas sin ESP32 conectado) -->
-          <div class="settings-section" style="margin-bottom:0;">
-            <div class="settings-sec-title">
-              <span>SIMULADOR DE SENSORES (CUANDO EL ESP32 NO ESTÁ CONECTADO)</span>
-              <div>
-                <button id="modeAutoCruise" type="button" class="filter-pill active" style="margin:0;">Automático</button>
-                <button id="modeSportPull" type="button" class="filter-pill" style="margin:0;">Aceleración</button>
-                <button id="modeManual" type="button" class="filter-pill" style="margin:0;">Manual</button>
-              </div>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;justify-content:space-between;">
-              <div style="width:48%;margin-bottom:8px;">
-                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Velocidad</span><span id="lblSliderSpeed" class="font-mono-tech">82 km/h</span></div>
-                <input id="sliderSpeed" type="range" min="0" max="220" step="1" value="82" style="width:100%;" />
-              </div>
-              <div style="width:48%;margin-bottom:8px;">
-                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>RPM Motor</span><span id="lblSliderRpm" class="font-mono-tech">2650 RPM</span></div>
-                <input id="sliderRpm" type="range" min="0" max="7000" step="50" value="2650" style="width:100%;" />
-              </div>
-              <div style="width:48%;">
-                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Combustible</span><span id="lblSliderFuel" class="font-mono-tech">64% (34.6 L)</span></div>
-                <input id="sliderFuel" type="range" min="2" max="100" step="1" value="64" style="width:100%;" />
-              </div>
-              <div style="width:48%;">
-                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Temp. Refrigerante</span><span id="lblSliderTemp" class="font-mono-tech">90 °C</span></div>
-                <input id="sliderTemp" type="range" min="50" max="130" step="1" value="90" style="width:100%;" />
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
 
-    <!-- MODAL 2: AÑADIR APLICACIÓN PERSONALIZADA AL LAUNCHER -->
+    <!-- MODAL AÑADIR APLICACIÓN PERSONALIZADA -->
     <div id="customAppModal" class="modal-backdrop hidden">
       <div class="modal-card" style="max-width:440px;">
         <div class="modal-head">
@@ -1057,655 +953,11 @@
       </div>
     </div>
 
-    <!-- MODAL 3: CÓDIGO COMPLETO PARA ANDROID STUDIO (EMPAQUETADO APK) -->
-    <div id="codeModal" class="modal-backdrop hidden">
-      <div class="modal-card">
-        <div class="modal-head">
-          <div>
-            <strong class="font-orbitron" style="font-size:12.5px;color:#f8fafc;">ARCHIVOS PARA COMPILAR EL APK (CHEVROLET COCKPIT OS v4.0)</strong>
-          </div>
-          <div class="dock-group">
-            <button id="btnOtaCheckNow" type="button" class="oem-action-btn primary" style="height:30px;margin-right:8px;">Sincronizar GitHub OTA</button>
-            <button id="btnCloseCodeModal" type="button" class="split-close-btn">Cerrar ✕</button>
-          </div>
-        </div>
-        <div style="padding:8px 18px;background:#060911;border-bottom:1px solid rgba(148,163,184,0.14);display:flex;flex-wrap:wrap;">
-          <button id="tabBtnAndroidKt" type="button" class="filter-pill active">1. MainActivity.kt</button>
-          <button id="tabBtnManifest" type="button" class="filter-pill">2. AndroidManifest.xml</button>
-          <button id="tabBtnGradle" type="button" class="filter-pill">3. app/build.gradle</button>
-          <button id="tabBtnTvBox" type="button" class="filter-pill">4. Comandos ADB</button>
-          <button id="tabBtnEsp32" type="button" class="filter-pill">5. Código ESP32</button>
-        </div>
-        <div class="modal-body">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;background:#0c1322;padding:8px 12px;border-radius:8px;">
-            <input id="inputGithubRawUrl" type="text" value="https://enfer1998.github.io/velocimetro-/" style="flex:1;margin-right:10px;padding:6px;border-radius:6px;background:#04060b;border:1px solid rgba(148,163,184,0.2);color:#38bdf8;font-family:monospace;font-size:11px;" />
-            <button id="btnSaveGithubUrl" type="button" class="oem-action-btn" style="height:30px;">Guardar URL OTA</button>
-          </div>
-
-          <div id="modalPanelAndroidKt">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span><code>app/src/main/java/com/corsa/cockpitos/MainActivity.kt</code></span>
-              <button id="btnCopyKotlinCode" type="button" class="oem-action-btn primary" style="height:28px;">Copiar MainActivity.kt</button>
-            </div>
-            <pre id="kotlinCodeBlock" class="code-block">package com.corsa.cockpitos
-
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
-import android.media.AudioManager
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
-import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.provider.Settings
-import android.view.KeyEvent
-import android.view.View
-import android.view.WindowManager
-import android.webkit.ConsoleMessage
-import android.webkit.GeolocationPermissions
-import android.webkit.JavascriptInterface
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
-import kotlin.concurrent.thread
-
-class MainActivity : AppCompatActivity() {
-
-    private lateinit var webView: WebView
-    private val localHtmlFile by lazy { File(filesDir, "cockpit_latest.html") }
-    private val prefs by lazy { getSharedPreferences("chevrolet_cockpit_prefs", Context.MODE_PRIVATE) }
-
-    // Al subir este número de versión, el APK nuevo borra automáticamente cualquier HTML viejo en caché
-    private val APK_BUNDLE_VERSION = 400
-
-    @Volatile
-    private var githubRawUrl = "https://enfer1998.github.io/velocimetro-/"
-
-    @SuppressLint("SetJavaScriptEnabled")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        hideSystemBars()
-
-        val savedUrl = prefs.getString("github_ota_url", null)
-        if (!savedUrl.isNullOrBlank()) {
-            githubRawUrl = savedUrl
-        }
-
-        val lastInstalledVer = prefs.getInt("apk_bundle_version", -1)
-        if (lastInstalledVer != APK_BUNDLE_VERSION) {
-            try {
-                if (localHtmlFile.exists()) localHtmlFile.delete()
-            } catch (_: Exception) {}
-            prefs.edit().putInt("apk_bundle_version", APK_BUNDLE_VERSION).apply()
-        }
-
-        webView = WebView(this)
-        setContentView(webView)
-
-        val ws: WebSettings = webView.settings
-        ws.javaScriptEnabled = true
-        ws.domStorageEnabled = true
-        ws.databaseEnabled = true
-        ws.allowFileAccess = true
-        ws.allowContentAccess = true
-        ws.setGeolocationEnabled(true)
-        ws.loadsImagesAutomatically = true
-        ws.useWideViewPort = true
-        ws.loadWithOverviewMode = true
-        ws.cacheMode = WebSettings.LOAD_DEFAULT
-        if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            ws.mediaPlaybackRequiresUserGesture = false
-        }
-        if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.LOLLIPOP) {
-            ws.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-        }
-
-        webView.isFocusable = true
-        webView.isFocusableInTouchMode = true
-        webView.webChromeClient = object : WebChromeClient() {
-            override fun onConsoleMessage(cm: ConsoleMessage?): Boolean {
-                return true
-            }
-            override fun onGeolocationPermissionsShowPrompt(
-                origin: String?,
-                callback: GeolocationPermissions.Callback?
-            ) {
-                callback?.invoke(origin, true, false)
-            }
-        }
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
-                pushInstalledAppsToWeb()
-            }
-        }
-
-        webView.addJavascriptInterface(CockpitBridge(), "AndroidCockpitBridge")
-
-        loadOfflineCluster()
-        registerWifiAutoUpdateCallback()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        hideSystemBars()
-        syncFromGitHubInBackground(forceReload = false, showFeedback = false)
-    }
-
-    private fun loadOfflineCluster() {
-        try {
-            if (localHtmlFile.exists() &amp;&amp; localHtmlFile.length() &gt; 2000) {
-                webView.loadUrl("file://${localHtmlFile.absolutePath}")
-            } else {
-                webView.loadUrl("file:///android_asset/index.html")
-            }
-        } catch (_: Exception) {
-            webView.loadUrl("file:///android_asset/index.html")
-        }
-    }
-
-    private fun pushInstalledAppsToWeb() {
-        thread {
-            try {
-                val jsonStr = queryInstalledAppsJsonString()
-                val escaped = JSONObject.quote(jsonStr)
-                runOnUiThread {
-                    try {
-                        webView.evaluateJavascript(
-                            "if(window.onAndroidAppsLoaded){window.onAndroidAppsLoaded($escaped);}",
-                            null
-                        )
-                    } catch (_: Exception) {}
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
-    private fun queryInstalledAppsJsonString(): String {
-        val pm = packageManager
-        val seen = HashSet&lt;String&gt;()
-        val arr = JSONArray()
-
-        val categories = listOf(Intent.CATEGORY_LAUNCHER, Intent.CATEGORY_LEANBACK_LAUNCHER)
-        for (cat in categories) {
-            val intent = Intent(Intent.ACTION_MAIN, null).apply { addCategory(cat) }
-            val list = try {
-                pm.queryIntentActivities(intent, 0)
-            } catch (_: Exception) {
-                emptyList()
-            }
-            for (ri in list) {
-                val pkg = ri.activityInfo?.packageName ?: continue
-                if (pkg == packageName || seen.contains(pkg)) continue
-                seen.add(pkg)
-                val label = try {
-                    ri.loadLabel(pm)?.toString() ?: pkg
-                } catch (_: Exception) {
-                    pkg
-                }
-                val obj = JSONObject()
-                obj.put("name", label)
-                obj.put("pkg", pkg)
-                arr.put(obj)
-            }
-        }
-        return arr.toString()
-    }
-
-    private fun registerWifiAutoUpdateCallback() {
-        try {
-            if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.LOLLIPOP) {
-                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-                val req = NetworkRequest.Builder()
-                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                    .build()
-                cm.registerNetworkCallback(req, object : ConnectivityManager.NetworkCallback() {
-                    override fun onAvailable(network: Network) {
-                        syncFromGitHubInBackground(forceReload = false, showFeedback = true)
-                    }
-                })
-            }
-        } catch (_: Exception) {}
-    }
-
-    private fun syncFromGitHubInBackground(forceReload: Boolean, showFeedback: Boolean) {
-        thread {
-            try {
-                val sep = if (githubRawUrl.contains("?")) "&amp;" else "?"
-                val targetUrl = githubRawUrl + sep + "t=" + System.currentTimeMillis()
-                val conn = (URL(targetUrl).openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 6000
-                    readTimeout = 8000
-                    requestMethod = "GET"
-                    useCaches = false
-                    setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate")
-                    setRequestProperty("Pragma", "no-cache")
-                }
-                if (conn.responseCode == 200) {
-                    val newHtml = conn.inputStream.bufferedReader(Charsets.UTF_8).readText()
-                    if (newHtml.contains("&lt;!DOCTYPE html&gt;", ignoreCase = true) &amp;&amp;
-                        newHtml.contains("CHEVROLET_COCKPIT_V4")
-                    ) {
-                        val oldHtml = if (localHtmlFile.exists()) localHtmlFile.readText() else ""
-                        if (newHtml != oldHtml || forceReload) {
-                            localHtmlFile.writeText(newHtml, Charsets.UTF_8)
-                            runOnUiThread {
-                                webView.loadUrl("file://${localHtmlFile.absolutePath}")
-                                if (showFeedback) {
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        "Sistema actualizado desde GitHub",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-                        } else if (showFeedback) {
-                            runOnUiThread {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "El sistema ya está en la última versión",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
-    inner class CockpitBridge {
-
-        @JavascriptInterface
-        fun getInstalledAppsJson(): String {
-            return try {
-                queryInstalledAppsJsonString()
-            } catch (_: Exception) {
-                "[]"
-            }
-        }
-
-        @JavascriptInterface
-        fun launchApp(pkgName: String?): Boolean {
-            return launchAppInternal(pkgName, splitScreen = false)
-        }
-
-        @JavascriptInterface
-        fun launchAppSplitScreen(pkgName: String?): Boolean {
-            return launchAppInternal(pkgName, splitScreen = true)
-        }
-
-        private fun launchAppInternal(pkgName: String?, splitScreen: Boolean): Boolean {
-            if (pkgName.isNullOrBlank()) return false
-            val cleanPkg = pkgName.trim()
-            return try {
-                var launchIntent = packageManager.getLaunchIntentForPackage(cleanPkg)
-                if (launchIntent == null &amp;&amp; Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.LOLLIPOP) {
-                    launchIntent = packageManager.getLeanbackLaunchIntentForPackage(cleanPkg)
-                }
-                if (launchIntent != null) {
-                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    if (splitScreen &amp;&amp; Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N) {
-                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
-                    }
-                    startActivity(launchIntent)
-                    true
-                } else {
-                    runOnUiThread {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "Aplicación no instalada ($cleanPkg)",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                    false
-                }
-            } catch (_: Exception) {
-                false
-            }
-        }
-
-        @JavascriptInterface
-        fun openIntentAction(actionType: String?) {
-            val act = actionType?.trim()?.lowercase() ?: "settings"
-            try {
-                val intent = when (act) {
-                    "wifi" -&gt; Intent(Settings.ACTION_WIFI_SETTINGS)
-                    "bluetooth" -&gt; Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
-                    "sound" -&gt; Intent(Settings.ACTION_SOUND_SETTINGS)
-                    "display" -&gt; Intent(Settings.ACTION_DISPLAY_SETTINGS)
-                    "apps" -&gt; Intent(Settings.ACTION_APPLICATION_SETTINGS)
-                    "storage" -&gt; Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
-                    "location" -&gt; Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                    "maps" -&gt; Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q="))
-                    else -&gt; Intent(Settings.ACTION_SETTINGS)
-                }
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(intent)
-            } catch (_: Exception) {
-                try {
-                    startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                } catch (_: Exception) {}
-            }
-        }
-
-        @JavascriptInterface
-        fun openWifiSettings() {
-            openIntentAction("wifi")
-        }
-
-        @JavascriptInterface
-        fun openSystemSettings() {
-            openIntentAction("settings")
-        }
-
-        @JavascriptInterface
-        fun mediaKeyControl(command: String?) {
-            try {
-                val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-                when (command?.lowercase()) {
-                    "vol_up" -&gt; audioManager.adjustStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.ADJUST_RAISE,
-                        AudioManager.FLAG_SHOW_UI
-                    )
-                    "vol_down" -&gt; audioManager.adjustStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.ADJUST_LOWER,
-                        AudioManager.FLAG_SHOW_UI
-                    )
-                    "mute" -&gt; audioManager.adjustStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.ADJUST_TOGGLE_MUTE,
-                        AudioManager.FLAG_SHOW_UI
-                    )
-                    "play_pause" -&gt; sendMediaKey(audioManager, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
-                    "next" -&gt; sendMediaKey(audioManager, KeyEvent.KEYCODE_MEDIA_NEXT)
-                    "prev" -&gt; sendMediaKey(audioManager, KeyEvent.KEYCODE_MEDIA_PREVIOUS)
-                }
-            } catch (_: Exception) {}
-        }
-
-        private fun sendMediaKey(am: AudioManager, keyCode: Int) {
-            am.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
-            am.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
-        }
-
-        @JavascriptInterface
-        fun checkForGitHubUpdate(customUrl: String?) {
-            if (!customUrl.isNullOrBlank() &amp;&amp; customUrl.startsWith("http")) {
-                githubRawUrl = customUrl.trim()
-                prefs.edit().putString("github_ota_url", githubRawUrl).apply()
-            }
-            syncFromGitHubInBackground(forceReload = true, showFeedback = true)
-        }
-
-        @JavascriptInterface
-        fun resetToFactoryAsset() {
-            try {
-                if (localHtmlFile.exists()) localHtmlFile.delete()
-                runOnUiThread {
-                    webView.loadUrl("file:///android_asset/index.html")
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
-    private fun hideSystemBars() {
-        try {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    or View.SYSTEM_UI_FLAG_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                )
-        } catch (_: Exception) {}
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        try {
-            webView.evaluateJavascript("if(window.onHardwareBack){window.onHardwareBack();}", null)
-        } catch (_: Exception) {}
-    }
-}
-</pre>
-          </div>
-
-          <div id="modalPanelManifest" class="hidden">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span><code>app/src/main/AndroidManifest.xml</code></span>
-              <button id="btnCopyManifestCode" type="button" class="oem-action-btn primary" style="height:28px;">Copiar AndroidManifest.xml</button>
-            </div>
-            <pre id="manifestCodeBlock" class="code-block">&lt;?xml version="1.0" encoding="utf-8"?&gt;
-&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.corsa.cockpitos"&gt;
-
-    &lt;uses-permission android:name="android.permission.INTERNET" /&gt;
-    &lt;uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /&gt;
-    &lt;uses-permission android:name="android.permission.ACCESS_WIFI_STATE" /&gt;
-    &lt;uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /&gt;
-    &lt;uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /&gt;
-    &lt;uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /&gt;
-    &lt;uses-permission
-        android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="QueryAllPackagesPermission" /&gt;
-
-    &lt;uses-feature android:name="android.hardware.touchscreen" android:required="false" /&gt;
-    &lt;uses-feature android:name="android.software.leanback" android:required="false" /&gt;
-
-    &lt;application
-        android:allowBackup="true"
-        android:hardwareAccelerated="true"
-        android:label="Chevrolet Cockpit OS"
-        android:usesCleartextTraffic="true"
-        android:resizeableActivity="true"
-        android:theme="@style/Theme.AppCompat.NoActionBar"&gt;
-
-        &lt;activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:stateNotNeeded="true"
-            android:clearTaskOnLaunch="true"
-            android:resizeableActivity="true"
-            android:screenOrientation="sensorLandscape"
-            android:configChanges="orientation|screenSize|SmallestScreenSize|screenLayout|keyboardHidden|keyboard|navigation"&gt;
-
-            &lt;intent-filter&gt;
-                &lt;action android:name="android.intent.action.MAIN" /&gt;
-                &lt;category android:name="android.intent.category.HOME" /&gt;
-                &lt;category android:name="android.intent.category.DEFAULT" /&gt;
-                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
-                &lt;category android:name="android.intent.category.LEANBACK_LAUNCHER" /&gt;
-            &lt;/intent-filter&gt;
-        &lt;/activity&gt;
-    &lt;/application&gt;
-&lt;/manifest&gt;
-</pre>
-          </div>
-
-          <div id="modalPanelGradle" class="hidden">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span><code>app/build.gradle</code></span>
-              <button id="btnCopyGradleCode" type="button" class="oem-action-btn primary" style="height:28px;">Copiar build.gradle</button>
-            </div>
-            <pre id="gradleCodeBlock" class="code-block">plugins {
-    id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
-}
-
-android {
-    namespace 'com.corsa.cockpitos'
-    compileSdk 34
-
-    defaultConfig {
-        applicationId "com.corsa.cockpitos"
-        minSdk 21
-        targetSdk 34
-        versionCode 400
-        versionName "4.0.0-Chevrolet-OEM"
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-        debug {
-            minifyEnabled false
-        }
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
-}
-
-dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.core:core-ktx:1.12.0'
-}
-</pre>
-          </div>
-
-          <div id="modalPanelTvBox" class="hidden">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span>Comandos ADB de instalación limpia</span>
-              <button id="btnCopyAdbScript" type="button" class="oem-action-btn primary" style="height:28px;">Copiar Comandos ADB</button>
-            </div>
-            <pre id="adbCodeBlock" class="code-block"># ============================================================================
-# INSTALACION LIMPIA EN EL SISTEMA ANDROID DEL AUTO (ADB)
-# ============================================================================
-adb connect 192.168.100.10:5555
-
-# Limpiar version anterior para eliminar cache viejo
-adb shell pm clear com.corsa.cockpitos
-adb uninstall com.corsa.cockpitos
-
-# Instalar nuevo APK Chevrolet Cockpit OS v4.0
-adb install -r app-debug.apk
-
-# Optimizar fluidez grafica y modo pantalla completa
-adb shell settings put global window_animation_scale 0
-adb shell settings put global transition_animation_scale 0
-adb shell settings put global animator_duration_scale 0
-adb shell settings put global stay_on_while_plugged_in 7
-adb shell settings put global policy_control immersive.full=*
-
-# Definir como Launcher Principal del Vehiculo
-adb shell cmd package set-home-activity com.corsa.cockpitos/.MainActivity
-</pre>
-          </div>
-
-          <div id="modalPanelEsp32" class="hidden">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span><code>corsa_telemetry_esp32.ino</code></span>
-              <button id="btnCopyArduinoCode" type="button" class="oem-action-btn primary" style="height:28px;">Copiar Código ESP32</button>
-            </div>
-            <pre id="arduinoCodeBlock" class="code-block">// TELEMETRIA CHEVROLET CORSA -&gt; USB SERIAL (115200 BAUDIOS)
-#include &lt;Arduino.h&gt;
-
-#define PIN_RPM_PULSE     25
-#define PIN_VSS_PULSE     26
-#define PIN_FUEL_ADC      34
-#define PIN_TEMP_ADC      35
-#define PIN_BATT_ADC      32
-
-#define PIN_TURN_L        13
-#define PIN_TURN_R        12
-#define PIN_LOW_BEAM      14
-#define PIN_HIGH_BEAM     27
-#define PIN_FOG_POS       18
-#define PIN_FOOT_BRAKE    33
-#define PIN_HANDBRAKE     15
-#define PIN_CHECK_ENG     4
-#define PIN_OIL_WARN      16
-#define PIN_BATT_WARN     17
-
-volatile unsigned long rpmPulses = 0;
-volatile unsigned long vssPulses = 0;
-unsigned long lastSampleMs = 0;
-
-void IRAM_ATTR onRpmPulse() { rpmPulses++; }
-void IRAM_ATTR onVssPulse() { vssPulses++; }
-
-void setup() {
-  Serial.begin(115200);
-  pinMode(PIN_RPM_PULSE, INPUT_PULLUP);
-  pinMode(PIN_VSS_PULSE, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(PIN_RPM_PULSE), onRpmPulse, FALLING);
-  attachInterrupt(digitalPinToInterrupt(PIN_VSS_PULSE), onVssPulse, FALLING);
-
-  int inputs[] = {PIN_TURN_L, PIN_TURN_R, PIN_LOW_BEAM, PIN_HIGH_BEAM, PIN_FOG_POS,
-                  PIN_FOOT_BRAKE, PIN_HANDBRAKE, PIN_CHECK_ENG, PIN_OIL_WARN, PIN_BATT_WARN};
-  for (int i = 0; i &lt; 10; i++) pinMode(inputs[i], INPUT_PULLUP);
-}
-
-void loop() {
-  unsigned long now = millis();
-  if (now - lastSampleMs &gt;= 30) {
-    float dt = (now - lastSampleMs) / 1000.0;
-    lastSampleMs = now;
-
-    noInterrupts();
-    unsigned long rCount = rpmPulses; rpmPulses = 0;
-    unsigned long vCount = vssPulses; vssPulses = 0;
-    interrupts();
-
-    int rpm = (int)((rCount / dt) * 30.0);
-    int speedKmh = (int)((vCount / dt) * 0.85);
-    int fuelPct = constrain(map(analogRead(PIN_FUEL_ADC), 400, 3600, 0, 100), 0, 100);
-    int coolantC = constrain(map(analogRead(PIN_TEMP_ADC), 500, 3400, 50, 120), 50, 125);
-    float battV = (analogRead(PIN_BATT_ADC) / 4095.0) * 18.5;
-
-    Serial.printf(
-      "{\"rpm\":%d,\"spd\":%d,\"fuel\":%d,\"temp\":%d,\"volt\":%.1f,"
-      "\"turnL\":%d,\"turnR\":%d,\"lowBeam\":%d,\"highBeam\":%d,\"fog\":%d,"
-      "\"brake\":%d,\"handbrake\":%d,\"check\":%d,\"oil\":%d,\"batt\":%d}\n",
-      rpm, speedKmh, fuelPct, coolantC, battV,
-      !digitalRead(PIN_TURN_L), !digitalRead(PIN_TURN_R),
-      !digitalRead(PIN_LOW_BEAM), !digitalRead(PIN_HIGH_BEAM), !digitalRead(PIN_FOG_POS),
-      !digitalRead(PIN_FOOT_BRAKE), !digitalRead(PIN_HANDBRAKE),
-      !digitalRead(PIN_CHECK_ENG), !digitalRead(PIN_OIL_WARN), !digitalRead(PIN_BATT_WARN)
-    );
-  }
-}
-</pre>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div id="toastMsg" class="hidden"></div>
   </div>
 
-  <!-- ==========================================================================
-       MOTOR JAVASCRIPT 100% ES5 PURO (COMPATIBLE CON WEBVIEW ANDROID 5+ Y PC)
-       ========================================================================== -->
   <script>
     (function() {
-      // Polyfill universal para trazado de rectángulos redondeados en cualquier WebView Android
       function drawRoundRectPath(ctx, x, y, w, h, r) {
         var radius = r;
         if (typeof r === 'object' && r !== null && typeof r.length === 'number') {
@@ -1735,7 +987,12 @@ void loop() {
         };
       }
 
-      // Iconos SVG vectoriales limpios para el cajón de aplicaciones automotriz (Cero emojis)
+      function padZeros(val, count) {
+        var s = String(Math.floor(Math.max(0, Number(val) || 0)));
+        while (s.length < count) s = '0' + s;
+        return s;
+      }
+
       var SVG_ICONS = {
         nav: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>',
         map: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>',
@@ -1750,7 +1007,6 @@ void loop() {
         app: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="9" y1="3" x2="9" y2="21"/></svg>'
       };
 
-      // Catálogo de aplicaciones automotrices (sin referencias a TV Box)
       var DEFAULT_CAR_APPS = [
         { name: 'Google Maps', pkg: 'com.google.android.apps.maps', cat: 'nav', iconKey: 'map', sub: 'Navegación GPS', splitCapable: true },
         { name: 'Waze', pkg: 'com.waze', cat: 'nav', iconKey: 'nav', sub: 'Tráfico y Alertas', splitCapable: true },
@@ -1766,50 +1022,76 @@ void loop() {
         { name: 'Ajustes Sistema', intent: 'settings', cat: 'sys', iconKey: 'settings', sub: 'Configuración Android' }
       ];
 
-      var CLUSTER_STYLES = [
-        { id: 0, shortName: 'Minimal', fullName: '1. Chevrolet Minimal Arc' },
-        { id: 1, shortName: 'Sport RS', fullName: '2. Chevrolet RS Performance' },
-        { id: 2, shortName: 'Dual OEM', fullName: '3. Chevrolet Dual Gauge OEM' }
+      // COLECCIÓN MAESTRA DE 18 TABLEROS (6 Familias x 3 Variantes)
+      var MASTER_THEMES = [
+        { id: 'chevy_minimal_arc', shortName: '1A. Chevy Minimal Arc', fullTitle: '1A. Chevrolet Minimal Arc OEM', bgClass: 'bg-minimal-glass' },
+        { id: 'chevy_rs_linear',   shortName: '1B. Chevy RS Performance', fullTitle: '1B. Chevrolet RS / Z06 Lineal', bgClass: 'bg-carbon' },
+        { id: 'chevy_dual_oem',    shortName: '1C. Chevy Dual Titanium', fullTitle: '1C. Chevrolet Dual Gauge OEM', bgClass: 'bg-classic-cluster' },
+
+        { id: 'vdo_1958',          shortName: '2A. VDO 1958 Cromo & Cuero', fullTitle: '2A. Clásico VDO 1958 Roadster', bgClass: 'bg-classic-cluster' },
+        { id: 'burl_luxury',       shortName: '2B. Raíz de Nogal & Oro', fullTitle: '2B. Lujo Inglés 1965 Raíz de Nogal & Oro', bgClass: 'bg-walnut-luxury' },
+        { id: 'muscle_1969',       shortName: '2C. Muscle 1969 Aluminio', fullTitle: '2C. Muscle Car 1969 Rallye SS', bgClass: 'bg-brushed-metal' },
+
+        { id: 'panoramic_arch',    shortName: '3A. Panorámico 4-Arcos Cyan', fullTitle: '3A. Panorámico 4-Agujas en Arco Cyan', bgClass: 'bg-classic-cluster' },
+        { id: 'tourbillon_gt',     shortName: '3B. Cronógrafo Tourbillon', fullTitle: '3B. Cronógrafo Suizo Tourbillon Grand Tourer', bgClass: 'bg-carbon' },
+        { id: 'gt_track',          shortName: '3C. GT Track 42 LEDs', fullTitle: '3C. Competición GT Shift-Light 42 LEDs', bgClass: 'bg-carbon' },
+
+        { id: 'peugeot_icockpit',  shortName: '4A. Virtual Cockpit Europeo', fullTitle: '4A. Virtual Cockpit Azul/Violeta', bgClass: 'bg-minimal-glass' },
+        { id: 'pagani_aviation',   shortName: '4B. Supercar Turbina Titanio', fullTitle: '4B. Supercar Aviación Turbina Animada', bgClass: 'bg-carbon' },
+        { id: 'clean_glass',       shortName: '4C. Minimal Glass + Auto 3D', fullTitle: '4C. Minimalista Glass + Silueta Auto 3D', bgClass: 'bg-minimal-glass' },
+
+        { id: 'kadett_gsi',        shortName: '5A. Kadett GSi / Monza VFD', fullTitle: '5A. Retro 80s Kadett GSi / Monza VFD', bgClass: 'bg-retro-grid' },
+        { id: 'corvette_c4',       shortName: '5B. Corvette C4 1986 CRT', fullTitle: '5B. Retro 1986 Corvette C4 CRT', bgClass: 'bg-retro-grid' },
+        { id: 'nixie_steampunk',   shortName: '5C. Tubos Nixie IN-18', fullTitle: '5C. Vintage Lab Tubos Nixie IN-18 & Bronce', bgClass: 'bg-walnut-luxury' },
+
+        { id: 'chevy_camaro_ss',   shortName: '6A. Camaro SS / C7 Track', fullTitle: '6A. Chevrolet Camaro SS / Corvette Track', bgClass: 'bg-carbon' },
+        { id: 'chevy_ultium_hud',  shortName: '6B. Chevrolet Ultium HUD', fullTitle: '6B. Chevrolet Ultium Panoramic HUD', bgClass: 'bg-minimal-glass' },
+        { id: 'hyper_lfa_center',  shortName: '6C. Hypercar Anillo Central', fullTitle: '6C. Hypercar Tacómetro Central Único', bgClass: 'bg-carbon' }
       ];
 
       var TANK_CAPACITY_LITERS = 54.0;
       var VW = 1600;
       var VH = 620;
 
+      // Estado de Producción Real (Arranca en 0 km/h y 0 RPM, sin simuladores artificiales)
       var state = {
-        // Por defecto inicia 100% en el Velocímetro (Modo Quiosco de Tablero)
-        viewMode: 'cluster_only', // 'cluster_only', 'split_map', 'split_media', 'split_apps'
+        viewMode: 'cluster_only',
         kioskPureHideDock: false,
-        clusterStyle: 0, // 0 = Minimal Arc, 1 = Sport RS, 2 = Dual Gauge OEM
+        clusterStyle: 0,
+        classicAccent: 'amber',
 
         activeAppCat: 'all',
         appSearchQuery: '',
 
-        simMode: 'cruise',
         serialConnected: false,
+        wifiPollEnabled: true,
+        esp32HttpUrl: 'http://192.168.4.1/telemetry',
+        lastTelemetryRxMs: 0,
         audioEnabled: true,
 
         dimmerMode: 'auto_both',
         nightBrightnessPct: 55,
         isNightDimmed: false,
 
-        rpm: 900,
-        targetRpm: 2550,
+        rpm: 0,
+        targetRpm: 0,
         speed: 0,
-        targetSpeed: 82,
+        targetSpeed: 0,
         fuelPct: 64,
         coolantC: 90,
-        batteryV: 14.1,
-        oilBar: 3.4,
-        gear: 4,
-        odometerKm: 148920.4,
-        tripKm: 124.5,
+        batteryV: 12.6,
+        oilBar: 1.2,
+        gear: 'N',
+        odometerKm: 148920.0,
+        tripKm: 0.0,
 
-        instL100: 6.8,
-        instKml: 14.7,
-        avgKml: 12.9,
+        instL100: 0.0,
+        instKml: 0.0,
+        avgKml: 12.8,
         fuelLiters: 34.6,
-        rangeKm: 448,
+        rangeKm: 442,
+        ecoGainKm: 0,
+        shiftHint: 'Listo',
 
         sweepActive: false,
         sweepProgress: 0,
@@ -1820,12 +1102,11 @@ void loop() {
 
         gpsLat: -25.2867,
         gpsLng: -57.6470,
-        gpsHeading: 0,
 
         telltales: {
           turnLeft: false,
           turnRight: false,
-          lowBeam: true,
+          lowBeam: false,
           highBeam: false,
           fogLight: false,
           footBrake: false,
@@ -1844,22 +1125,30 @@ void loop() {
       };
 
       try {
-        var saved = localStorage.getItem('chevrolet_cockpit_v4_prefs');
+        var saved = localStorage.getItem('chevrolet_cockpit_v6_prefs');
         if (saved) {
           var p = JSON.parse(saved);
-          if (typeof p.clusterStyle === 'number') state.clusterStyle = p.clusterStyle % 3;
+          if (typeof p.clusterStyle === 'number') state.clusterStyle = p.clusterStyle % 18;
+          if (p.classicAccent) state.classicAccent = p.classicAccent;
           if (p.dimmerMode) state.dimmerMode = p.dimmerMode;
           if (typeof p.nightBrightnessPct === 'number') state.nightBrightnessPct = p.nightBrightnessPct;
+          if (typeof p.odometerKm === 'number') state.odometerKm = p.odometerKm;
+          if (typeof p.tripKm === 'number') state.tripKm = p.tripKm;
+          if (p.esp32HttpUrl) state.esp32HttpUrl = p.esp32HttpUrl;
           if (p.customApps && p.customApps.length) state.customApps = p.customApps;
         }
       } catch (e) {}
 
       function savePrefs() {
         try {
-          localStorage.setItem('chevrolet_cockpit_v4_prefs', JSON.stringify({
+          localStorage.setItem('chevrolet_cockpit_v6_prefs', JSON.stringify({
             clusterStyle: state.clusterStyle,
+            classicAccent: state.classicAccent,
             dimmerMode: state.dimmerMode,
             nightBrightnessPct: state.nightBrightnessPct,
+            odometerKm: state.odometerKm,
+            tripKm: state.tripKm,
+            esp32HttpUrl: state.esp32HttpUrl,
             customApps: state.customApps
           }));
         } catch (e) {}
@@ -1874,7 +1163,7 @@ void loop() {
         if (toastTimer) clearTimeout(toastTimer);
         toastTimer = setTimeout(function() {
           el.className = 'hidden';
-        }, 2800);
+        }, 2600);
       }
 
       function pad2(n) {
@@ -1889,7 +1178,7 @@ void loop() {
         if (clockEl) clockEl.textContent = pad2(hr) + ':' + pad2(min);
 
         var isNightHour = (hr >= 19 || hr < 6);
-        var lightsOn = Boolean(state.telltales.lowBeam || state.telltales.highBeam);
+        var lightsOn = Boolean(state.telltales.lowBeam || state.telltales.highBeam || state.telltales.fogLight);
 
         var shouldDim = false;
         if (state.dimmerMode === 'force_night') shouldDim = true;
@@ -1907,7 +1196,6 @@ void loop() {
         }
       }
 
-      // Sonido sintetizado de relé de guiños
       var audioCtx = null;
       function initAudio() {
         try {
@@ -1935,6 +1223,118 @@ void loop() {
           osc.start(0);
           osc.stop(audioCtx.currentTime + 0.026);
         } catch (e) {}
+      }
+
+      // ========================================================================
+      // RECEPCIÓN DE TELEMETRÍA REAL DESDE EL ESP32-C3 SUPER MINI (USB O WI-FI)
+      // ========================================================================
+      function applyTelemetryObject(d, sourceLabel) {
+        if (!d || typeof d !== 'object') return;
+        state.lastTelemetryRxMs = Date.now();
+        if (typeof d.rpm === 'number') state.targetRpm = Math.max(0, Math.min(7000, d.rpm));
+        if (typeof d.spd === 'number') state.targetSpeed = Math.max(0, Math.min(220, d.spd));
+        if (typeof d.fuel === 'number') state.fuelPct = Math.max(0, Math.min(100, d.fuel));
+        if (typeof d.temp === 'number') state.coolantC = Math.max(40, Math.min(135, d.temp));
+        if (typeof d.volt === 'number') state.batteryV = d.volt;
+
+        if (typeof d.turnL !== 'undefined') state.telltales.turnLeft = Boolean(d.turnL);
+        if (typeof d.turnR !== 'undefined') state.telltales.turnRight = Boolean(d.turnR);
+        if (typeof d.lowBeam !== 'undefined') state.telltales.lowBeam = Boolean(d.lowBeam);
+        if (typeof d.highBeam !== 'undefined') state.telltales.highBeam = Boolean(d.highBeam);
+        if (typeof d.fog !== 'undefined') state.telltales.fogLight = Boolean(d.fog);
+        if (typeof d.brake !== 'undefined') state.telltales.footBrake = Boolean(d.brake);
+        if (typeof d.handbrake !== 'undefined') state.telltales.handbrake = Boolean(d.handbrake);
+        if (typeof d.check !== 'undefined') state.telltales.checkEngine = Boolean(d.check);
+        if (typeof d.oil !== 'undefined') state.telltales.oilWarn = Boolean(d.oil);
+        if (typeof d.batt !== 'undefined') state.telltales.batteryWarn = Boolean(d.batt);
+        if (typeof d.door !== 'undefined') state.telltales.doorOpen = Boolean(d.door);
+        if (typeof d.belt !== 'undefined') state.telltales.seatbelt = Boolean(d.belt);
+
+        var badge = document.getElementById('connBadge');
+        if (badge) {
+          badge.textContent = sourceLabel || 'ESP32-C3 ACTIVO';
+          badge.style.color = '#34d399';
+          badge.style.borderColor = 'rgba(52, 211, 153, 0.45)';
+        }
+      }
+
+      // Callback global para inyección directa desde Android USB Serial o WebView
+      window.onEsp32Telemetry = function(jsonOrObj) {
+        try {
+          var data = typeof jsonOrObj === 'string' ? JSON.parse(jsonOrObj) : jsonOrObj;
+          applyTelemetryObject(data, 'ESP32-C3 USB');
+        } catch (e) {}
+      };
+
+      // Sondeo HTTP de baja latencia hacia el Punto de Acceso Wi-Fi del ESP32-C3 Super Mini (192.168.4.1)
+      var wifiPollInFlight = false;
+      function pollEsp32WifiTelemetry() {
+        if (!state.wifiPollEnabled || state.serialConnected || wifiPollInFlight) return;
+        wifiPollInFlight = true;
+        try {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', state.esp32HttpUrl + '?t=' + Date.now(), true);
+          xhr.timeout = 450;
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+              wifiPollInFlight = false;
+              if (xhr.status === 200 && xhr.responseText) {
+                try {
+                  var d = JSON.parse(xhr.responseText);
+                  applyTelemetryObject(d, 'ESP32-C3 WI-FI');
+                } catch (e) {}
+              }
+            }
+          };
+          xhr.ontimeout = function() { wifiPollInFlight = false; };
+          xhr.onerror = function() { wifiPollInFlight = false; };
+          xhr.send();
+        } catch (e) {
+          wifiPollInFlight = false;
+        }
+      }
+      setInterval(pollEsp32WifiTelemetry, 65);
+
+      // Conexión por Cable USB-C (WebSerial API en navegadores compatibles)
+      function connectEsp32UsbSerial() {
+        if (!navigator.serial || typeof navigator.serial.requestPort !== 'function') {
+          showToast('Conectá por Wi-Fi a la red "Chevrolet-ECU-C3" (clave: corsa2011) o usá cable USB OTG');
+          return;
+        }
+        navigator.serial.requestPort().then(function(port) {
+          return port.open({ baudRate: 115200 }).then(function() {
+            state.serialConnected = true;
+            showToast('ESP32-C3 Super Mini conectado por USB-C (115200 baudios)');
+            var reader = port.readable.getReader();
+            var decoder = new TextDecoder();
+            var buffer = '';
+            function readChunk() {
+              reader.read().then(function(result) {
+                if (result.done) {
+                  state.serialConnected = false;
+                  return;
+                }
+                buffer += decoder.decode(result.value, { stream: true });
+                var lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                for (var i = 0; i < lines.length; i++) {
+                  var ln = lines[i].replace(/^\s+|\s+$/g, '');
+                  if (ln.charAt(0) === '{' && ln.charAt(ln.length - 1) === '}') {
+                    try {
+                      applyTelemetryObject(JSON.parse(ln), 'ESP32-C3 USB-C');
+                    } catch (e) {}
+                  }
+                }
+                readChunk();
+              }).catch(function() {
+                state.serialConnected = false;
+              });
+            }
+            readChunk();
+          });
+        }).catch(function() {
+          showToast('Puerto USB no seleccionado • Escuchando ESP32-C3 por Wi-Fi (192.168.4.1)');
+        });
       }
 
       // ========================================================================
@@ -1967,19 +1367,17 @@ void loop() {
             }
           }
           if (leafletMap) {
-            setTimeout(function() {
-              leafletMap.invalidateSize();
-            }, 120);
+            setTimeout(function() { leafletMap.invalidateSize(); }, 120);
           }
         } catch (e) {}
 
-        // Activar geolocalización real si está disponible
         try {
           if (navigator.geolocation) {
             navigator.geolocation.watchPosition(function(pos) {
               state.gpsLat = pos.coords.latitude;
               state.gpsLng = pos.coords.longitude;
-              if (pos.coords.speed && pos.coords.speed > 0 && !state.serialConnected) {
+              // Si aún no hay pulsos VSS del ESP32, usar velocidad GPS real si está en movimiento
+              if (Date.now() - state.lastTelemetryRxMs > 3000 && pos.coords.speed && pos.coords.speed > 0.5) {
                 state.targetSpeed = Math.round(pos.coords.speed * 3.6);
               }
               if (leafletMap && leafletMarker) {
@@ -1995,7 +1393,6 @@ void loop() {
         } catch (e) {}
       }
 
-      // Radar GPS Vectorial para cuando el auto está sin conexión Wi-Fi
       var radarCanvas = document.getElementById('offlineNavRadarCanvas');
       var radarCtx = radarCanvas ? radarCanvas.getContext('2d') : null;
 
@@ -2016,8 +1413,7 @@ void loop() {
         radarCtx.fillStyle = '#060911';
         radarCtx.fillRect(0, 0, w, h);
 
-        // Retícula de navegación en movimiento según velocidad
-        var offset = ((nowMs * 0.04 * (Math.max(15, state.speed) / 60)) % 48);
+        var offset = ((nowMs * 0.04 * (Math.max(5, state.speed) / 60)) % 48);
         radarCtx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
         radarCtx.lineWidth = 1;
         for (var x = 0; x < w; x += 48) {
@@ -2033,7 +1429,6 @@ void loop() {
           radarCtx.stroke();
         }
 
-        // Anillos de alcance GPS
         var rings = [65, 130, 195];
         for (var r = 0; r < rings.length; r++) {
           radarCtx.beginPath();
@@ -2042,15 +1437,6 @@ void loop() {
           radarCtx.stroke();
         }
 
-        // Ruta proyectada
-        radarCtx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
-        radarCtx.lineWidth = 4;
-        radarCtx.beginPath();
-        radarCtx.moveTo(cx, cy);
-        radarCtx.quadraticCurveTo(cx, cy - 90, cx + Math.sin(nowMs * 0.0005) * 45, 40);
-        radarCtx.stroke();
-
-        // Puntero de posición del vehículo
         radarCtx.save();
         radarCtx.translate(cx, cy);
         radarCtx.fillStyle = '#38bdf8';
@@ -2115,7 +1501,7 @@ void loop() {
         if (window.AndroidCockpitBridge && typeof window.AndroidCockpitBridge.openIntentAction === 'function') {
           window.AndroidCockpitBridge.openIntentAction(intentType);
         } else {
-          showToast('Sistema Android: ' + intentType.toUpperCase());
+          showToast('Abriendo ajuste del sistema: ' + intentType.toUpperCase());
         }
       }
 
@@ -2200,12 +1586,7 @@ void loop() {
 
       window.onHardwareBack = function() {
         var sModal = document.getElementById('settingsModal');
-        var cModal = document.getElementById('codeModal');
         var aModal = document.getElementById('customAppModal');
-        if (cModal && cModal.className.indexOf('hidden') === -1) {
-          cModal.className = 'modal-backdrop hidden';
-          return;
-        }
         if (sModal && sModal.className.indexOf('hidden') === -1) {
           sModal.className = 'modal-backdrop hidden';
           return;
@@ -2218,7 +1599,7 @@ void loop() {
       };
 
       // ========================================================================
-      // TELEMETRÍA Y COMPUTADORA DE A BORDO CHEVROLET
+      // COMPUTADORA DE A BORDO Y TELEMETRÍA REAL
       // ========================================================================
       function updateTripComputer(dtSec) {
         if (state.speed < 2) {
@@ -2232,32 +1613,37 @@ void loop() {
           else state.gear = 5;
         }
 
-        state.oilBar = Math.min(5.2, Math.max(1.2, 1.3 + (state.rpm / 7000) * 3.6));
+        state.oilBar = state.rpm < 300 ? 0.0 : Math.min(5.2, Math.max(1.2, 1.3 + (state.rpm / 7000) * 3.6));
         state.fuelLiters = (state.fuelPct / 100) * TANK_CAPACITY_LITERS;
 
-        var rpmFactor = Math.pow(state.rpm / 2500, 1.45);
-        var brakeCut = state.telltales.footBrake && state.rpm > 1500 && state.speed > 20;
-        if (brakeCut) {
+        if (state.speed < 2 && state.rpm < 300) {
           state.instL100 = 0.0;
-          state.instKml = 99.9;
-        } else if (state.speed < 5) {
-          state.instL100 = 9.5;
-          state.instKml = 10.5;
+          state.instKml = 0.0;
         } else {
-          var baseL100 = 5.4 + rpmFactor * 2.3 + (state.speed > 110 ? (state.speed - 110) * 0.045 : 0);
-          state.instL100 = Math.max(3.8, Math.min(20.0, baseL100));
-          state.instKml = 100.0 / state.instL100;
+          var rpmFactor = Math.pow(state.rpm / 2500, 1.45);
+          var brakeCut = state.telltales.footBrake && state.rpm > 1500 && state.speed > 20;
+          if (brakeCut) {
+            state.instL100 = 0.0;
+            state.instKml = 99.9;
+          } else if (state.speed < 5) {
+            state.instL100 = 9.2;
+            state.instKml = 10.8;
+          } else {
+            var baseL100 = 5.4 + rpmFactor * 2.3 + (state.speed > 110 ? (state.speed - 110) * 0.045 : 0);
+            state.instL100 = Math.max(3.8, Math.min(20.0, baseL100));
+            state.instKml = 100.0 / state.instL100;
+            state.avgKml = state.avgKml * 0.998 + Math.min(state.instKml, 16.5) * 0.002;
+          }
         }
 
-        if (!brakeCut) {
-          state.avgKml = state.avgKml * 0.998 + Math.min(state.instKml, 16.5) * 0.002;
-        }
-        var effectiveKml = state.avgKml * 0.7 + Math.min(state.instKml, 19.0) * 0.3;
+        var effectiveKml = state.avgKml > 1 ? state.avgKml : 12.8;
         state.rangeKm = Math.round(state.fuelLiters * effectiveKml);
 
-        var distKm = (state.speed / 3600) * dtSec;
-        state.odometerKm += distKm;
-        state.tripKm += distKm;
+        if (state.speed > 0.5) {
+          var distKm = (state.speed / 3600) * dtSec;
+          state.odometerKm += distKm;
+          state.tripKm += distKm;
+        }
 
         state.telltales.lowFuel = state.fuelPct <= 15;
         state.telltales.tempWarn = state.coolantC >= 106;
@@ -2279,19 +1665,11 @@ void loop() {
         if (navSpd) navSpd.textContent = Math.round(state.speed) + ' km/h';
         if (navRng) navRng.textContent = 'Autonomía: ' + state.rangeKm + ' km';
 
-        var btns = document.querySelectorAll('.telltale-btn');
-        for (var i = 0; i < btns.length; i++) {
-          var b = btns[i];
-          var k = b.getAttribute('data-telltale');
-          if (!k) continue;
-          b.className = 'grid-btn telltale-btn' + (state.telltales[k] ? ' active' : '');
-        }
-
         updateNightDimmer();
       }
 
       // ========================================================================
-      // DIBUJO VECTORIAL DEL TABLERO CHEVROLET (ICONOS ISO + 3 DISEÑOS MINIMALISTAS)
+      // MOTOR GRÁFICO CANVAS 2D Y ELEMENTOS VECTORIALES COMUNES
       // ========================================================================
       var canvas = document.getElementById('clusterCanvas');
       var ctx = canvas.getContext('2d');
@@ -2336,7 +1714,6 @@ void loop() {
         hitZones.push({ key: key, x: vx, y: vy, r: vr });
       }
 
-      // Emblema Chevrolet Bowtie en el Canvas
       function drawChevyBowtie(ctx, cx, cy, scale) {
         ctx.save();
         ctx.translate(cx, cy);
@@ -2358,16 +1735,15 @@ void loop() {
         ctx.strokeStyle = '#94a3b8';
         ctx.lineWidth = 2;
         ctx.stroke();
-        ctx.fillStyle = 'rgba(212, 175, 55, 0.82)';
+        ctx.fillStyle = 'rgba(212, 175, 55, 0.85)';
         ctx.fill();
         ctx.restore();
       }
 
-      // Símbolos ISO Automotrices Vectoriales (Cero texto tosco)
       function drawIsoTelltaleSymbol(ctx, key, x, y, color, isOn) {
         ctx.save();
         ctx.translate(x, y);
-        var strokeCol = isOn ? color : 'rgba(100, 116, 139, 0.26)';
+        var strokeCol = isOn ? color : 'rgba(100, 116, 139, 0.25)';
         ctx.strokeStyle = strokeCol;
         ctx.fillStyle = strokeCol;
         ctx.lineWidth = 2.2;
@@ -2376,31 +1752,18 @@ void loop() {
 
         if (key === 'turnLeft') {
           ctx.beginPath();
-          ctx.moveTo(-12, 0);
-          ctx.lineTo(-2, -9);
-          ctx.lineTo(-2, -4);
-          ctx.lineTo(10, -4);
-          ctx.lineTo(10, 4);
-          ctx.lineTo(-2, 4);
-          ctx.lineTo(-2, 9);
-          ctx.closePath();
+          ctx.moveTo(-12, 0); ctx.lineTo(-2, -9); ctx.lineTo(-2, -4); ctx.lineTo(10, -4);
+          ctx.lineTo(10, 4); ctx.lineTo(-2, 4); ctx.lineTo(-2, 9); ctx.closePath();
           ctx.fill();
         } else if (key === 'turnRight') {
           ctx.beginPath();
-          ctx.moveTo(12, 0);
-          ctx.lineTo(2, -9);
-          ctx.lineTo(2, -4);
-          ctx.lineTo(-10, -4);
-          ctx.lineTo(-10, 4);
-          ctx.lineTo(2, 4);
-          ctx.lineTo(2, 9);
-          ctx.closePath();
+          ctx.moveTo(12, 0); ctx.lineTo(2, -9); ctx.lineTo(2, -4); ctx.lineTo(-10, -4);
+          ctx.lineTo(-10, 4); ctx.lineTo(2, 4); ctx.lineTo(2, 9); ctx.closePath();
           ctx.fill();
         } else if (key === 'lowBeam') {
           ctx.beginPath();
           ctx.arc(2, 0, 7, -Math.PI * 0.5, Math.PI * 0.5, false);
-          ctx.closePath();
-          ctx.stroke();
+          ctx.closePath(); ctx.stroke();
           ctx.beginPath();
           ctx.moveTo(-2, -5); ctx.lineTo(-10, -2);
           ctx.moveTo(-2, 0);  ctx.lineTo(-10, 3);
@@ -2409,20 +1772,16 @@ void loop() {
         } else if (key === 'highBeam') {
           ctx.beginPath();
           ctx.arc(2, 0, 7, -Math.PI * 0.5, Math.PI * 0.5, false);
-          ctx.closePath();
-          ctx.stroke();
+          ctx.closePath(); ctx.stroke();
           ctx.beginPath();
           ctx.moveTo(-2, -5); ctx.lineTo(-11, -5);
           ctx.moveTo(-2, 0);  ctx.lineTo(-11, 0);
           ctx.moveTo(-2, 5);  ctx.lineTo(-11, 5);
           ctx.stroke();
         } else if (key === 'footBrake' || key === 'handbrake') {
-          ctx.beginPath();
-          ctx.arc(0, 0, 8, 0, Math.PI * 2);
-          ctx.stroke();
+          ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.stroke();
           ctx.font = '700 10px "Inter", sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
           ctx.fillText(key === 'handbrake' ? 'P' : '!', 0, 0.5);
         } else if (key === 'checkEngine') {
           ctx.strokeRect(-8, -5, 16, 11);
@@ -2434,9 +1793,6 @@ void loop() {
         } else if (key === 'oilWarn') {
           ctx.beginPath();
           ctx.moveTo(-8, 4); ctx.lineTo(4, 4); ctx.lineTo(8, -2); ctx.lineTo(-6, -2); ctx.closePath();
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(8, -2); ctx.lineTo(12, 2);
           ctx.stroke();
         } else if (key === 'batteryWarn') {
           ctx.strokeRect(-9, -5, 18, 11);
@@ -2499,13 +1855,11 @@ void loop() {
         }
       }
 
-      // Silueta Minimalista de Asistencia en Carril
       function drawMinimalCarAssistance(ctx, cx, cy, scale) {
         ctx.save();
         ctx.translate(cx, cy);
         ctx.scale(scale, scale);
 
-        // Líneas de carril en perspectiva sutil
         ctx.strokeStyle = 'rgba(56, 189, 248, 0.22)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -2513,7 +1867,6 @@ void loop() {
         ctx.moveTo(64, 85);  ctx.lineTo(26, -90);
         ctx.stroke();
 
-        // Haces de luz
         if (state.telltales.lowBeam || state.telltales.highBeam) {
           var len = state.telltales.highBeam ? 85 : 50;
           ctx.fillStyle = state.telltales.highBeam ? 'rgba(59, 130, 246, 0.22)' : 'rgba(226, 232, 240, 0.14)';
@@ -2523,7 +1876,6 @@ void loop() {
           ctx.fill();
         }
 
-        // Chasis minimalista
         ctx.fillStyle = '#0d1320';
         ctx.strokeStyle = 'rgba(148, 163, 184, 0.48)';
         ctx.lineWidth = 2;
@@ -2531,14 +1883,12 @@ void loop() {
         ctx.fill();
         ctx.stroke();
 
-        // Parabrisas y luneta
         ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
         drawRoundRectPath(ctx, -18, -22, 36, 20, 5);
         ctx.fill();
         drawRoundRectPath(ctx, -16, 16, 32, 14, 4);
         ctx.fill();
 
-        // Luces de freno
         if (state.telltales.footBrake || state.telltales.handbrake) {
           ctx.fillStyle = '#ef4444';
           ctx.fillRect(-18, 45, 11, 4);
@@ -2548,29 +1898,23 @@ void loop() {
       }
 
       // ========================================================================
-      // ESTILO 1: CHEVROLET MINIMAL ARC (Por defecto — Limpio, Moderno, Ejecutivo)
+      // FAMILIA 1: CHEVROLET OEM MODERNOS (1A, 1B, 1C)
       // ========================================================================
       function renderChevroletMinimalArc(w, h, dispRpm, dispSpeed) {
         ctx.save();
         drawOemTelltaleRibbon(ctx, 800, 44, 1040);
         drawChevyBowtie(ctx, 800, 96, 0.9);
 
-        var cy = 338;
-        var leftCx = 350;
-        var rightCx = 1250;
-        var r = 216;
-        var startA = 0.78 * Math.PI;
-        var sweepA = 1.44 * Math.PI;
+        var cy = 338, leftCx = 350, rightCx = 1250, r = 216;
+        var startA = 0.78 * Math.PI, sweepA = 1.44 * Math.PI;
 
         function drawPrecisionArcGauge(cx, cy, r, frac, mainNumber, unitLabel, bottomLabel, accentHex, maxTicks, stepMul) {
-          // Pista exterior fina
           ctx.beginPath();
           ctx.arc(cx, cy, r * 1.04, startA, startA + sweepA);
           ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
           ctx.lineWidth = 1.5;
           ctx.stroke();
 
-          // Pista principal de fondo
           ctx.beginPath();
           ctx.arc(cx, cy, r, startA, startA + sweepA);
           ctx.strokeStyle = 'rgba(30, 41, 59, 0.65)';
@@ -2578,7 +1922,6 @@ void loop() {
           ctx.lineCap = 'round';
           ctx.stroke();
 
-          // Arco activo
           ctx.beginPath();
           ctx.arc(cx, cy, r, startA, startA + Math.max(0.015, frac) * sweepA);
           ctx.strokeStyle = accentHex;
@@ -2586,15 +1929,12 @@ void loop() {
           ctx.lineCap = 'round';
           ctx.stroke();
 
-          // Marcas de graduación limpias
           for (var i = 0; i <= maxTicks; i++) {
             var tf = i / maxTicks;
             var ang = startA + tf * sweepA;
-            var inR = r * 0.84;
-            var outR = r * 0.90;
             ctx.beginPath();
-            ctx.moveTo(cx + Math.cos(ang) * inR, cy + Math.sin(ang) * inR);
-            ctx.lineTo(cx + Math.cos(ang) * outR, cy + Math.sin(ang) * outR);
+            ctx.moveTo(cx + Math.cos(ang) * r * 0.84, cy + Math.sin(ang) * r * 0.84);
+            ctx.lineTo(cx + Math.cos(ang) * r * 0.90, cy + Math.sin(ang) * r * 0.90);
             ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
             ctx.lineWidth = 1.8;
             ctx.stroke();
@@ -2609,56 +1949,28 @@ void loop() {
             }
           }
 
-          // Valor central principal
           ctx.fillStyle = '#ffffff';
           ctx.font = '700 92px "Inter", sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(mainNumber, cx, cy - 12);
 
-          // Unidad
           ctx.fillStyle = '#64748b';
           ctx.font = '600 16px "Inter", sans-serif';
           ctx.fillText(unitLabel, cx, cy + 48);
 
-          // Sub-etiqueta inferior
           ctx.fillStyle = '#cbd5e1';
           ctx.font = '600 18px "Inter", sans-serif';
           ctx.fillText(bottomLabel, cx, cy + 122);
         }
 
-        // Velocímetro Izquierdo
-        drawPrecisionArcGauge(
-          leftCx, cy, r,
-          Math.min(1, dispSpeed / 220),
-          String(Math.round(dispSpeed)),
-          'KM/H',
-          'MARCHA  ' + state.gear,
-          '#38bdf8',
-          11, 20
-        );
+        drawPrecisionArcGauge(leftCx, cy, r, Math.min(1, dispSpeed / 220), String(Math.round(dispSpeed)), 'KM/H', 'MARCHA  ' + state.gear, '#38bdf8', 11, 20);
+        drawPrecisionArcGauge(rightCx, cy, r, Math.min(1, dispRpm / 7000), (dispRpm / 1000).toFixed(1), 'RPM x 1000', state.instKml >= 90 ? 'CUT-OFF' : (state.instKml.toFixed(1) + ' km/L'), dispRpm >= 5800 ? '#ef4444' : '#e2e8f0', 7, 1);
 
-        // Tacómetro Derecho
-        var rpmColor = dispRpm >= 5800 ? '#ef4444' : '#e2e8f0';
-        drawPrecisionArcGauge(
-          rightCx, cy, r,
-          Math.min(1, dispRpm / 7000),
-          (dispRpm / 1000).toFixed(1),
-          'RPM x 1000',
-          (state.instKml >= 90 ? 'CUT-OFF' : state.instKml.toFixed(1) + ' km/L'),
-          rpmColor,
-          7, 1
-        );
-
-        // Zona Central: Silueta de asistencia + Barras minimalistas de Combustible y Temperatura
         var midX = 800;
         drawMinimalCarAssistance(ctx, midX, cy - 16, 1.35);
 
-        // Indicadores lineales limpios en la parte central inferior
-        var barW = 280;
-        var barX = midX - barW / 2;
-        var barY = 485;
-
+        var barW = 280, barX = midX - 140, barY = 485;
         ctx.fillStyle = '#94a3b8';
         ctx.font = '600 13px "Inter", sans-serif';
         ctx.textAlign = 'left';
@@ -2670,27 +1982,17 @@ void loop() {
         ctx.fillStyle = 'rgba(30, 41, 59, 0.8)';
         drawRoundRectPath(ctx, barX, barY + 10, barW, 6, 3);
         ctx.fill();
-
         ctx.fillStyle = state.fuelPct <= 15 ? '#ef4444' : '#38bdf8';
         drawRoundRectPath(ctx, barX, barY + 10, barW * (state.fuelPct / 100), 6, 3);
         ctx.fill();
-
         ctx.restore();
       }
 
-      // ========================================================================
-      // ESTILO 2: CHEVROLET RS PERFORMANCE (Barra Horizontal de RPM + Velocidad Gigante)
-      // ========================================================================
       function renderChevroletRsPerformance(w, h, dispRpm, dispSpeed) {
         ctx.save();
         drawOemTelltaleRibbon(ctx, 800, 42, 1040);
 
-        // Barra lineal horizontal de RPM de alta precisión (estilo Corvette C8 / RS)
-        var barX = 160;
-        var barY = 96;
-        var barW = 1280;
-        var barH = 26;
-
+        var barX = 160, barY = 96, barW = 1280, barH = 26;
         ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
         ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
         ctx.lineWidth = 1.5;
@@ -2698,8 +2000,7 @@ void loop() {
         ctx.fill();
         ctx.stroke();
 
-        var rpmFrac = Math.min(1, dispRpm / 7000);
-        var activeW = Math.max(8, barW * rpmFrac);
+        var activeW = Math.max(8, barW * Math.min(1, dispRpm / 7000));
         ctx.fillStyle = dispRpm >= 5800 ? '#ef4444' : '#38bdf8';
         drawRoundRectPath(ctx, barX, barY, activeW, barH, 6);
         ctx.fill();
@@ -2712,9 +2013,7 @@ void loop() {
           ctx.fillText(String(i), tx, barY + 48);
         }
 
-        // Centro: Velocímetro Digital Gigante + Indicador de Marcha
-        var midX = 800;
-        var cy = 340;
+        var midX = 800, cy = 340;
         drawChevyBowtie(ctx, midX, 185, 0.95);
 
         ctx.fillStyle = '#ffffff';
@@ -2727,14 +2026,11 @@ void loop() {
         ctx.font = '700 18px "Orbitron", sans-serif';
         ctx.fillText('KM/H   •   ' + Math.round(dispRpm) + ' RPM', midX, cy + 82);
 
-        // Panel Izquierdo: Marcha engranada
         ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
         ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
-        ctx.lineWidth = 1.5;
         drawRoundRectPath(ctx, 210, 230, 220, 220, 16);
         ctx.fill();
         ctx.stroke();
-
         ctx.fillStyle = '#64748b';
         ctx.font = '700 13px "Inter", sans-serif';
         ctx.fillText('TRANSMISIÓN', 320, 265);
@@ -2742,7 +2038,6 @@ void loop() {
         ctx.font = '800 96px "Orbitron", sans-serif';
         ctx.fillText(String(state.gear), 320, 355);
 
-        // Panel Derecho: Parámetros de Motor y Autonomía
         ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
         ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
         drawRoundRectPath(ctx, 1170, 230, 270, 220, 16);
@@ -2766,27 +2061,18 @@ void loop() {
           ctx.textAlign = 'right';
           ctx.fillText(metrics[m][1], 1415, my);
         }
-
         ctx.restore();
       }
 
-      // ========================================================================
-      // ESTILO 3: CHEVROLET DUAL GAUGE OEM (Agujas de Alta Precisión en Titanio Oscuro)
-      // ========================================================================
       function renderChevroletDualOem(w, h, dispRpm, dispSpeed) {
         ctx.save();
         drawOemTelltaleRibbon(ctx, 800, 44, 1040);
         drawChevyBowtie(ctx, 800, 96, 0.9);
 
-        var cy = 338;
-        var leftCx = 350;
-        var rightCx = 1250;
-        var r = 222;
-        var startA = 0.75 * Math.PI;
-        var sweepA = 1.50 * Math.PI;
+        var cy = 338, leftCx = 350, rightCx = 1250, r = 222;
+        var startA = 0.75 * Math.PI, sweepA = 1.50 * Math.PI;
 
         function drawOemNeedleDial(cx, cy, r, maxVal, currentVal, isRpm) {
-          // Anillo exterior en aluminio anodizado oscuro
           ctx.beginPath();
           ctx.arc(cx, cy, r * 1.03, 0, Math.PI * 2);
           ctx.fillStyle = '#070a12';
@@ -2802,12 +2088,9 @@ void loop() {
             var frac = v / maxVal;
             var ang = startA + frac * sweepA;
             var isMaj = (v % stepMajor === 0);
-            var inR = isMaj ? r * 0.82 : r * 0.88;
-            var outR = r * 0.95;
-
             ctx.beginPath();
-            ctx.moveTo(cx + Math.cos(ang) * inR, cy + Math.sin(ang) * inR);
-            ctx.lineTo(cx + Math.cos(ang) * outR, cy + Math.sin(ang) * outR);
+            ctx.moveTo(cx + Math.cos(ang) * (isMaj ? r * 0.82 : r * 0.88), cy + Math.sin(ang) * (isMaj ? r * 0.82 : r * 0.88));
+            ctx.lineTo(cx + Math.cos(ang) * (r * 0.95), cy + Math.sin(ang) * (r * 0.95));
             ctx.strokeStyle = (isRpm && v >= 5800) ? '#ef4444' : (isMaj ? '#f8fafc' : 'rgba(148, 163, 184, 0.4)');
             ctx.lineWidth = isMaj ? 2.4 : 1.1;
             ctx.stroke();
@@ -2822,7 +2105,6 @@ void loop() {
             }
           }
 
-          // Lectura digital secundaria dentro de la esfera
           ctx.fillStyle = '#ffffff';
           ctx.font = '700 32px "Inter", sans-serif';
           ctx.textAlign = 'center';
@@ -2832,7 +2114,6 @@ void loop() {
           ctx.font = '600 13px "Inter", sans-serif';
           ctx.fillText(isRpm ? 'RPM x 1000' : 'KM/H', cx, cy + 98);
 
-          // Aguja vectorial estilizada
           var clamped = Math.max(0, Math.min(maxVal, currentVal));
           var nAng = startA + (clamped / maxVal) * sweepA;
           ctx.save();
@@ -2859,10 +2140,8 @@ void loop() {
         drawOemNeedleDial(leftCx, cy, r, 220, dispSpeed, false);
         drawOemNeedleDial(rightCx, cy, r, 7000, dispRpm, true);
 
-        // Computadora de viaje central
         var midX = 800;
         drawMinimalCarAssistance(ctx, midX, cy - 20, 1.3);
-
         ctx.fillStyle = '#e2e8f0';
         ctx.font = '700 20px "Inter", sans-serif';
         ctx.textAlign = 'center';
@@ -2870,12 +2149,1526 @@ void loop() {
         ctx.fillStyle = '#64748b';
         ctx.font = '600 14px "Inter", sans-serif';
         ctx.fillText(state.fuelLiters.toFixed(1) + ' L  •  ' + Math.round(state.coolantC) + ' °C', midX, 522);
-
         ctx.restore();
       }
 
       // ========================================================================
-      // BUCLE DE ANIMACIÓN A 60 FPS
+      // FAMILIA 2: CLÁSICOS DE ÉPOCA, CROMO & MADERA DE LUJO (2A, 2B, 2C)
+      // ========================================================================
+      function drawLuxuryBezel(ctx, cx, cy, r, isGold) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 1.08, 0, Math.PI * 2);
+        ctx.fillStyle = '#05070b';
+        ctx.fill();
+
+        var outerGrad = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+        if (isGold) {
+          outerGrad.addColorStop(0, '#fef08a');
+          outerGrad.addColorStop(0.28, '#ca8a04');
+          outerGrad.addColorStop(0.55, '#713f12');
+          outerGrad.addColorStop(0.8, '#eab308');
+          outerGrad.addColorStop(1, '#422006');
+        } else {
+          outerGrad.addColorStop(0, '#f8fafc');
+          outerGrad.addColorStop(0.25, '#94a3b8');
+          outerGrad.addColorStop(0.52, '#1e293b');
+          outerGrad.addColorStop(0.78, '#e2e8f0');
+          outerGrad.addColorStop(1, '#0f172a');
+        }
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 1.075, 0, Math.PI * 2);
+        ctx.fillStyle = outerGrad;
+        ctx.fill();
+
+        var innerGrad = ctx.createLinearGradient(cx + r, cy - r, cx - r, cy + r);
+        if (isGold) {
+          innerGrad.addColorStop(0, '#78350f');
+          innerGrad.addColorStop(0.5, '#fde047');
+          innerGrad.addColorStop(1, '#a16207');
+        } else {
+          innerGrad.addColorStop(0, '#0f172a');
+          innerGrad.addColorStop(0.5, '#f1f5f9');
+          innerGrad.addColorStop(1, '#475569');
+        }
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 1.03, 0, Math.PI * 2);
+        ctx.fillStyle = innerGrad;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawJewelLamp(ctx, x, y, r, colorHex, isOn, labelText, isGold, hitKey) {
+        if (hitKey) registerHitZone(hitKey, x, y, r * 1.8);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, r * 1.24, 0, Math.PI * 2);
+        ctx.fillStyle = isGold ? '#ca8a04' : '#94a3b8';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = isOn ? colorHex : '#141b26';
+        ctx.fill();
+
+        if (isOn) {
+          ctx.beginPath();
+          ctx.arc(x - r * 0.25, y - r * 0.25, r * 0.35, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+        }
+
+        if (labelText) {
+          ctx.fillStyle = isOn ? '#ffffff' : (isGold ? '#fde68a' : '#cbd5e1');
+          ctx.font = '700 ' + Math.max(9, Math.round(r * 0.68)) + 'px "Inter", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(labelText, x, y + r * 1.4);
+        }
+        ctx.restore();
+      }
+
+      function drawMechanicalOdometer(ctx, cx, cy, width, height, valueNumber, digitsCount, isTrip) {
+        ctx.save();
+        var str = padZeros(valueNumber, digitsCount).slice(-digitsCount);
+        var cellW = width / digitsCount;
+
+        ctx.fillStyle = '#05070b';
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(cx - width / 2 - 2, cy - height / 2 - 2, width + 4, height + 4);
+        ctx.fillRect(cx - width / 2, cy - height / 2, width, height);
+
+        for (var i = 0; i < digitsCount; i++) {
+          var dx = cx - width / 2 + i * cellW;
+          var isLastTrip = isTrip && i === digitsCount - 1;
+          ctx.fillStyle = isLastTrip ? '#dc2626' : '#18181b';
+          ctx.fillRect(dx + 0.8, cy - height / 2 + 1, cellW - 1.6, height - 2);
+
+          ctx.fillStyle = isLastTrip ? '#ffffff' : '#f5f5f4';
+          ctx.font = '700 ' + Math.round(height * 0.74) + 'px "Share Tech Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(str.charAt(i), dx + cellW / 2, cy + 0.5);
+        }
+        ctx.restore();
+      }
+
+      function renderVdo1958(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        var hoodGrad = ctx.createLinearGradient(0, 0, 0, 82);
+        hoodGrad.addColorStop(0, '#9a6b47');
+        hoodGrad.addColorStop(0.65, '#6e472b');
+        hoodGrad.addColorStop(1, '#2b1a10');
+        ctx.fillStyle = hoodGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 74);
+        ctx.quadraticCurveTo(800, -25, 1600, 74);
+        ctx.lineTo(1600, 0);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        var cy = 315, r = 232, leftCx = 345, rightCx = 1255;
+        var warmCream = state.classicAccent === 'ice' ? '#e0f2fe' : (state.classicAccent === 'red' ? '#fecdd3' : '#f5ebd6');
+
+        function drawVdoDial(cx, cy, r, maxVal, currentVal, isRpm) {
+          drawLuxuryBezel(ctx, cx, cy, r, false);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fillStyle = '#12161c';
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.91, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(245, 235, 214, 0.32)';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.44, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(226, 232, 240, 0.68)';
+          ctx.lineWidth = 1.6;
+          ctx.stroke();
+
+          var startAngle = 0.73 * Math.PI, totalSweep = 1.54 * Math.PI;
+          if (isRpm) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * 0.86, startAngle + (5600 / maxVal) * totalSweep, startAngle + totalSweep);
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 12;
+            ctx.stroke();
+          }
+
+          var stepMinor = isRpm ? 200 : 5, stepMajor = isRpm ? 1000 : 20;
+          for (var v = 0; v <= maxVal; v += stepMinor) {
+            var frac = v / maxVal;
+            var ang = startAngle + frac * totalSweep;
+            var isMajor = (v % stepMajor === 0);
+            var isHalf = !isMajor && (v % (stepMajor / 2) === 0);
+            var innerR = isMajor ? r * 0.79 : (isHalf ? r * 0.83 : r * 0.86);
+            var outerR = r * 0.91;
+
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(ang) * innerR, cy + Math.sin(ang) * innerR);
+            ctx.lineTo(cx + Math.cos(ang) * outerR, cy + Math.sin(ang) * outerR);
+            ctx.strokeStyle = warmCream;
+            ctx.lineWidth = isMajor ? 2.4 : (isHalf ? 1.5 : 0.9);
+            ctx.stroke();
+
+            if (isMajor && (v > 0 || !isRpm)) {
+              var numR = r * 0.66;
+              ctx.fillStyle = warmCream;
+              ctx.font = '700 26px "Cormorant Garamond", Georgia, serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(String(isRpm ? (v / 100) : v), cx + Math.cos(ang) * numR, cy + Math.sin(ang) * numR);
+            }
+          }
+
+          ctx.fillStyle = warmCream;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          if (isRpm) {
+            ctx.font = '700 15px "Cinzel", serif';
+            ctx.fillText('V D O', cx, cy - 58);
+            ctx.font = '700 15px "Inter", sans-serif';
+            ctx.fillText('RPM x 100', cx, cy + 56);
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '700 14px "Share Tech Mono", monospace';
+            ctx.fillText('MARCHA [' + state.gear + ']', cx, cy + 80);
+          } else {
+            drawMechanicalOdometer(ctx, cx, cy - 54, 118, 23, state.odometerKm, 6, false);
+            drawMechanicalOdometer(ctx, cx, cy + 52, 86, 21, state.tripKm * 10, 4, true);
+            ctx.fillStyle = warmCream;
+            ctx.font = '700 15px "Inter", sans-serif';
+            ctx.fillText('KM/H', cx, cy + 84);
+          }
+
+          var clamped = Math.max(0, Math.min(maxVal, currentVal));
+          var needleAng = startAngle + (clamped / maxVal) * totalSweep;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(needleAng);
+          ctx.beginPath();
+          ctx.moveTo(-42, -5.5);
+          ctx.lineTo(r * 0.85, 0);
+          ctx.lineTo(-42, 5.5);
+          ctx.closePath();
+          ctx.fillStyle = '#f5ebd6';
+          ctx.fill();
+          ctx.restore();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, 26, 0, Math.PI * 2);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fill();
+        }
+
+        drawVdoDial(leftCx, cy, r, 7000, dispRpm, true);
+        drawVdoDial(rightCx, cy, r, 220, dispSpeed, false);
+
+        var midX = 800;
+        var leftBlink = (state.telltales.turnLeft || state.hazardActive) && state.blinkPhase;
+        var rightBlink = (state.telltales.turnRight || state.hazardActive) && state.blinkPhase;
+
+        ctx.fillStyle = 'rgba(10, 14, 22, 0.84)';
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 2;
+        drawRoundRectPath(ctx, midX - 175, 78, 350, 232, 16);
+        ctx.fill();
+        ctx.stroke();
+
+        drawJewelLamp(ctx, midX - 122, 110, 15, '#22c55e', leftBlink, 'GIRO IZQ', false, 'turnLeft');
+        drawJewelLamp(ctx, midX - 40,  110, 15, '#22c55e', state.telltales.lowBeam, 'BAJA', false, 'lowBeam');
+        drawJewelLamp(ctx, midX + 40,  110, 15, '#3b82f6', state.telltales.highBeam, 'ALTA', false, 'highBeam');
+        drawJewelLamp(ctx, midX + 122, 110, 15, '#22c55e', rightBlink, 'GIRO DER', false, 'turnRight');
+
+        drawJewelLamp(ctx, midX - 122, 182, 14, '#ef4444', state.telltales.footBrake, 'STOP', false, 'footBrake');
+        drawJewelLamp(ctx, midX - 40,  182, 14, '#f59e0b', state.telltales.checkEngine, 'CHECK', false, 'checkEngine');
+        drawJewelLamp(ctx, midX + 40,  182, 14, '#ef4444', state.telltales.oilWarn, 'ACEITE', false, 'oilWarn');
+        drawJewelLamp(ctx, midX + 122, 182, 14, '#ef4444', state.telltales.batteryWarn, 'BAT', false, 'batteryWarn');
+
+        drawJewelLamp(ctx, midX - 122, 252, 14, '#ef4444', state.telltales.handbrake, 'FRENO P', false, 'handbrake');
+        drawJewelLamp(ctx, midX - 40,  252, 14, '#ef4444', state.telltales.doorOpen, 'PUERTA', false, 'doorOpen');
+        drawJewelLamp(ctx, midX + 40,  252, 14, '#ef4444', state.telltales.seatbelt, 'CINTURÓN', false, 'seatbelt');
+        drawJewelLamp(ctx, midX + 122, 252, 14, '#f59e0b', state.telltales.lowFuel, 'RESERVA', false, 'lowFuel');
+
+        var auxR = 102, auxCy = 448;
+        drawLuxuryBezel(ctx, midX, auxCy, auxR, false);
+        ctx.beginPath();
+        ctx.arc(midX, auxCy, auxR, 0, Math.PI * 2);
+        ctx.fillStyle = '#12161c';
+        ctx.fill();
+
+        ctx.fillStyle = warmCream;
+        ctx.font = '700 13px "Cinzel", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('TANQUE & AUTONOMÍA', midX, auxCy - 46);
+        ctx.font = '700 24px "Cinzel", serif';
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText(state.fuelLiters.toFixed(1) + ' L (' + Math.round(state.fuelPct) + '%)', midX, auxCy - 10);
+        ctx.fillStyle = '#34d399';
+        ctx.font = '700 22px "Share Tech Mono", monospace';
+        ctx.fillText(state.rangeKm + ' KM', midX, auxCy + 22);
+        ctx.fillStyle = warmCream;
+        ctx.font = '600 13px "Inter", sans-serif';
+        ctx.fillText('AGUA ' + Math.round(state.coolantC) + '°C • ' + state.batteryV.toFixed(1) + 'V', midX, auxCy + 54);
+        ctx.restore();
+      }
+
+      function renderBurlLuxury1965(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(234, 179, 8, 0.55)';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(24, 20, 1552, 570);
+
+        var cy = 315, r = 228, leftCx = 335, rightCx = 1265;
+
+        function drawIvoryGoldMainDial(cx, cy, r, maxVal, currentVal, titleTop, subUnit, isRpm) {
+          drawLuxuryBezel(ctx, cx, cy, r, true);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fillStyle = '#f5e6c8';
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.48, 0, Math.PI * 2);
+          ctx.strokeStyle = '#b45309';
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
+
+          var startAngle = 0.74 * Math.PI, totalSweep = 1.52 * Math.PI;
+          var stepMinor = isRpm ? 200 : 5, stepMajor = isRpm ? 1000 : 20;
+
+          for (var v = 0; v <= maxVal; v += stepMinor) {
+            var frac = v / maxVal;
+            var ang = startAngle + frac * totalSweep;
+            var isMajor = (v % stepMajor === 0);
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(ang) * (isMajor ? r * 0.77 : r * 0.84), cy + Math.sin(ang) * (isMajor ? r * 0.77 : r * 0.84));
+            ctx.lineTo(cx + Math.cos(ang) * (r * 0.91), cy + Math.sin(ang) * (r * 0.91));
+            ctx.strokeStyle = (isRpm && v >= 5800) ? '#b91c1c' : '#1c1917';
+            ctx.lineWidth = isMajor ? 2.4 : 1.0;
+            ctx.stroke();
+
+            if (isMajor) {
+              var numR = r * 0.64;
+              ctx.fillStyle = (isRpm && v >= 6000) ? '#b91c1c' : '#1c1917';
+              ctx.font = '700 25px "Playfair Display", Georgia, serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(String(isRpm ? v / 100 : v), cx + Math.cos(ang) * numR, cy + Math.sin(ang) * numR);
+            }
+          }
+
+          ctx.fillStyle = '#44403c';
+          ctx.font = '700 15px "Cinzel", serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(titleTop, cx, cy - 55);
+          ctx.fillText(subUnit, cx, cy + 72);
+
+          if (!isRpm) {
+            drawMechanicalOdometer(ctx, cx, cy + 42, 108, 20, state.odometerKm, 6, false);
+          } else {
+            ctx.fillStyle = '#92400e';
+            ctx.font = '700 14px "Cinzel", serif';
+            ctx.fillText('GEAR ' + state.gear, cx, cy + 44);
+          }
+
+          var clamped = Math.max(0, Math.min(maxVal, currentVal));
+          var needleAng = startAngle + (clamped / maxVal) * totalSweep;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(needleAng);
+          ctx.fillStyle = '#1e1b4b';
+          ctx.beginPath();
+          ctx.moveTo(-36, -4.5);
+          ctx.lineTo(r * 0.84, 0);
+          ctx.lineTo(-36, 4.5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+          ctx.fillStyle = '#ca8a04';
+          ctx.fill();
+        }
+
+        function drawIvorySmallDial(cx, cy, r, minVal, maxVal, val, ticksLabels, titleTop, bottomReadout) {
+          drawLuxuryBezel(ctx, cx, cy, r, true);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fillStyle = '#f5e6c8';
+          ctx.fill();
+
+          var startA = 0.80 * Math.PI, sweepA = 1.40 * Math.PI;
+          for (var i = 0; i <= 4; i++) {
+            var frac = i / 4;
+            var ang = startA + frac * sweepA;
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(ang) * (r * 0.74), cy + Math.sin(ang) * (r * 0.74));
+            ctx.lineTo(cx + Math.cos(ang) * (r * 0.88), cy + Math.sin(ang) * (r * 0.88));
+            ctx.strokeStyle = '#1c1917';
+            ctx.lineWidth = (i % 2 === 0) ? 2.2 : 1.2;
+            ctx.stroke();
+
+            if (i % 2 === 0) {
+              ctx.fillStyle = '#1c1917';
+              ctx.font = '700 12px "Playfair Display", serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(ticksLabels[i / 2], cx + Math.cos(ang) * (r * 0.54), cy + Math.sin(ang) * (r * 0.54));
+            }
+          }
+
+          ctx.fillStyle = '#44403c';
+          ctx.font = '700 11px "Cinzel", serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(titleTop, cx, cy - 18);
+          ctx.fillStyle = '#78350f';
+          ctx.font = '700 12px "Cinzel", serif';
+          ctx.fillText(bottomReadout, cx, cy + 36);
+
+          var clamped = Math.max(minVal, Math.min(maxVal, val));
+          var nAng = startA + ((clamped - minVal) / (maxVal - minVal)) * sweepA;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(nAng);
+          ctx.fillStyle = '#1e1b4b';
+          ctx.beginPath();
+          ctx.moveTo(-12, -3);
+          ctx.lineTo(r * 0.78, 0);
+          ctx.lineTo(-12, 3);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+          ctx.fillStyle = '#ca8a04';
+          ctx.fill();
+        }
+
+        drawIvoryGoldMainDial(leftCx, cy, r, 7000, dispRpm, 'SMITHS LONDON', 'R.P.M. x 100', true);
+        drawIvoryGoldMainDial(rightCx, cy, r, 220, dispSpeed, 'JAEGER CHRONO', 'KM / HOUR', false);
+
+        var midX = 800;
+        var leftBlink = (state.telltales.turnLeft || state.hazardActive) && state.blinkPhase;
+        var rightBlink = (state.telltales.turnRight || state.hazardActive) && state.blinkPhase;
+
+        drawJewelLamp(ctx, midX - 150, 78, 12.5, '#22c55e', leftBlink, 'GIRO IZQ', true, 'turnLeft');
+        drawJewelLamp(ctx, midX - 90,  78, 12.5, '#22c55e', state.telltales.lowBeam, 'BAJA', true, 'lowBeam');
+        drawJewelLamp(ctx, midX - 30,  78, 12.5, '#3b82f6', state.telltales.highBeam, 'ALTA', true, 'highBeam');
+        drawJewelLamp(ctx, midX + 30,  78, 12.5, '#ef4444', state.telltales.footBrake, 'STOP', true, 'footBrake');
+        drawJewelLamp(ctx, midX + 90,  78, 12.5, '#ef4444', state.telltales.handbrake, 'FRENO', true, 'handbrake');
+        drawJewelLamp(ctx, midX + 150, 78, 12.5, '#22c55e', rightBlink, 'GIRO DER', true, 'turnRight');
+
+        drawJewelLamp(ctx, midX - 150, 148, 12, '#f59e0b', state.telltales.checkEngine, 'CHECK', true, 'checkEngine');
+        drawJewelLamp(ctx, midX - 90,  148, 12, '#ef4444', state.telltales.oilWarn, 'ACEITE', true, 'oilWarn');
+        drawJewelLamp(ctx, midX - 30,  148, 12, '#ef4444', state.telltales.batteryWarn, 'BAT', true, 'batteryWarn');
+        drawJewelLamp(ctx, midX + 30,  148, 12, '#ef4444', state.telltales.doorOpen, 'PUERTA', true, 'doorOpen');
+        drawJewelLamp(ctx, midX + 90,  148, 12, '#ef4444', state.telltales.seatbelt, 'CINT.', true, 'seatbelt');
+        drawJewelLamp(ctx, midX + 150, 148, 12, '#f59e0b', state.telltales.lowFuel, 'NAFTA', true, 'lowFuel');
+
+        drawIvorySmallDial(midX - 98, 308, 74, 0, 100, state.fuelPct, ['E', '1/2', 'F'], 'PETROL', state.fuelLiters.toFixed(0) + ' L');
+        drawIvorySmallDial(midX + 98, 308, 74, 50, 130, state.coolantC, ['50', '90', '130'], 'WATER', Math.round(state.coolantC) + '°C');
+
+        ctx.fillStyle = '#1c1917';
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 2.2;
+        drawRoundRectPath(ctx, midX - 180, 428, 360, 104, 10);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#fde047';
+        ctx.font = '700 22px "Cinzel", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('AUTONOMÍA: ' + state.rangeKm + ' KM', midX, 462);
+        ctx.fillStyle = '#f5ebd6';
+        ctx.font = '600 17px "Cormorant Garamond", serif';
+        ctx.fillText('Consumo: ' + (state.instKml >= 90 ? 'Cut-Off' : state.instKml.toFixed(1) + ' km/L') + ' • Tanque: ' + state.fuelLiters.toFixed(1) + ' L', midX, 498);
+        ctx.restore();
+      }
+
+      function renderMuscle1969(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        var cy = 310, mainR = 188, auxR = 112;
+
+        function drawDeepBarrel(cx, cy, r, minVal, maxVal, val, steps, title, subText, isRpm, isSmall) {
+          drawLuxuryBezel(ctx, cx, cy, r, false);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fillStyle = '#090b10';
+          ctx.fill();
+
+          var startA = 0.75 * Math.PI, sweepA = 1.5 * Math.PI;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.87, startA, startA + sweepA);
+          ctx.strokeStyle = '#6ee7b7';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          for (var i = 0; i <= steps; i++) {
+            var v = minVal + (i / steps) * (maxVal - minVal);
+            var ang = startA + (i / steps) * sweepA;
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(ang) * r * 0.75, cy + Math.sin(ang) * r * 0.75);
+            ctx.lineTo(cx + Math.cos(ang) * r * 0.87, cy + Math.sin(ang) * r * 0.87);
+            ctx.strokeStyle = (isRpm && v >= 5600) ? '#ef4444' : '#ecfdf5';
+            ctx.lineWidth = 2.2;
+            ctx.stroke();
+
+            if (!isSmall || i % 2 === 0) {
+              var nx = cx + Math.cos(ang) * r * 0.58;
+              var ny = cy + Math.sin(ang) * r * 0.58;
+              ctx.fillStyle = (isRpm && v >= 5600) ? '#f87171' : '#a7f3d0';
+              ctx.font = '800 ' + (isSmall ? 13 : 20) + 'px "Orbitron", sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(String(isRpm ? Math.round(v / 100) : Math.round(v)), nx, ny);
+            }
+          }
+
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = '700 ' + (isSmall ? 12 : 16) + 'px "Rajdhani", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(title, cx, cy - r * 0.27);
+
+          ctx.fillStyle = '#fb923c';
+          ctx.font = '700 ' + (isSmall ? 13 : 18) + 'px "Share Tech Mono", monospace';
+          ctx.fillText(subText, cx, cy + r * 0.64);
+
+          var clamped = Math.max(minVal, Math.min(maxVal, val));
+          var nAng = startA + ((clamped - minVal) / (maxVal - minVal)) * sweepA;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(nAng);
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.moveTo(-r * 0.16, -r * 0.03);
+          ctx.lineTo(r * 0.82, 0);
+          ctx.lineTo(-r * 0.16, r * 0.03);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.11, 0, Math.PI * 2);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fill();
+        }
+
+        drawDeepBarrel(155,  cy, auxR,  0, 100,  state.fuelPct,  4,  'FUEL TANK',   state.fuelLiters.toFixed(0) + 'L | ' + state.rangeKm + 'KM', false, true);
+        drawDeepBarrel(515,  cy, mainR, 0, 7000, dispRpm,        7,  'RALLYE TACH', Math.round(dispRpm) + ' RPM', true, false);
+        drawDeepBarrel(1085, cy, mainR, 0, 220,  dispSpeed,      11, 'SPEEDO KM/H', 'ODO ' + Math.floor(state.odometerKm), false, false);
+        drawDeepBarrel(1445, cy, auxR,  50, 130, state.coolantC, 4,  'WATER TEMP',  Math.round(state.coolantC) + '°C | ' + state.oilBar.toFixed(1) + 'B', false, true);
+
+        var midX = 800;
+        var leftBlink = (state.telltales.turnLeft || state.hazardActive) && state.blinkPhase;
+        var rightBlink = (state.telltales.turnRight || state.hazardActive) && state.blinkPhase;
+
+        ctx.fillStyle = 'rgba(12, 16, 23, 0.88)';
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 2;
+        drawRoundRectPath(ctx, midX - 64, 66, 128, 488, 14);
+        ctx.fill();
+        ctx.stroke();
+
+        var spineRows = [
+          [ { k:'turnLeft', l:'IZQ',   c:'#22c55e', on:leftBlink }, { k:'turnRight', l:'DER',   c:'#22c55e', on:rightBlink } ],
+          [ { k:'lowBeam',  l:'BAJA',  c:'#22c55e', on:state.telltales.lowBeam }, { k:'highBeam', l:'ALTA', c:'#3b82f6', on:state.telltales.highBeam } ],
+          [ { k:'footBrake',l:'STOP',  c:'#ef4444', on:state.telltales.footBrake }, { k:'handbrake',l:'FRENO',c:'#ef4444', on:state.telltales.handbrake } ],
+          [ { k:'checkEngine',l:'CHK', c:'#f59e0b', on:state.telltales.checkEngine }, { k:'oilWarn', l:'OIL', c:'#ef4444', on:state.telltales.oilWarn } ],
+          [ { k:'batteryWarn',l:'BAT', c:'#ef4444', on:state.telltales.batteryWarn }, { k:'lowFuel', l:'FUEL', c:'#f59e0b', on:state.telltales.lowFuel } ],
+          [ { k:'doorOpen', l:'DOOR',  c:'#ef4444', on:state.telltales.doorOpen }, { k:'seatbelt', l:'BELT', c:'#ef4444', on:state.telltales.seatbelt } ]
+        ];
+
+        for (var rIdx = 0; rIdx < spineRows.length; rIdx++) {
+          var pair = spineRows[rIdx];
+          var ry = 104 + rIdx * 74;
+          drawJewelLamp(ctx, midX - 32, ry, 12, pair[0].c, pair[0].on, pair[0].l, false, pair[0].k);
+          drawJewelLamp(ctx, midX + 32, ry, 12, pair[1].c, pair[1].on, pair[1].l, false, pair[1].k);
+        }
+        ctx.restore();
+      }
+
+      // ========================================================================
+      // FAMILIA 3: DEPORTIVOS GT & ALTA RELOJERÍA (3A, 3B, 3C)
+      // ========================================================================
+      function renderPanoramicArch(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        drawOemTelltaleRibbon(ctx, 800, 44, 1020);
+        var baseCy = 392, mainR = 218, smallR = 132;
+
+        function drawCyanArchGauge(cx, cy, r, minVal, maxVal, val, labels, unitText, redFrom, isSmall) {
+          var startA = 0.92 * Math.PI, sweepA = 1.16 * Math.PI;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.88, startA, startA + sweepA);
+          ctx.strokeStyle = 'rgba(34, 211, 238, 0.25)';
+          ctx.lineWidth = r * 0.08;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.94, startA, startA + sweepA);
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2.2;
+          ctx.stroke();
+
+          var totalTicks = (labels.length - 1) * 4;
+          for (var i = 0; i <= totalTicks; i++) {
+            var frac = i / totalTicks;
+            var v = minVal + frac * (maxVal - minVal);
+            var ang = startA + frac * sweepA;
+            var isMaj = (i % 4 === 0);
+            var isRed = redFrom && v >= redFrom;
+
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(ang) * (isMaj ? r * 0.78 : r * 0.84), cy + Math.sin(ang) * (isMaj ? r * 0.78 : r * 0.84));
+            ctx.lineTo(cx + Math.cos(ang) * (r * 0.93), cy + Math.sin(ang) * (r * 0.93));
+            ctx.strokeStyle = isRed ? '#ef4444' : '#ffffff';
+            ctx.lineWidth = isMaj ? 2.8 : 1.2;
+            ctx.stroke();
+
+            if (isMaj) {
+              var numR = r * 0.64;
+              ctx.fillStyle = isRed ? '#fca5a5' : '#f8fafc';
+              ctx.font = '700 ' + (isSmall ? 14 : 18) + 'px "Inter", sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(String(labels[i / 4]), cx + Math.cos(ang) * numR, cy + Math.sin(ang) * numR);
+            }
+          }
+
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = '700 ' + (isSmall ? 14 : 17) + 'px "Inter", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(unitText, cx, cy - r * 0.30);
+
+          var clamped = Math.max(minVal, Math.min(maxVal, val));
+          var nAng = startA + ((clamped - minVal) / (maxVal - minVal)) * sweepA;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(nAng);
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.moveTo(0, -4.5);
+          ctx.lineTo(r * 0.85, 0);
+          ctx.lineTo(0, 4.5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, isSmall ? 9 : 13, 0, Math.PI * 2);
+          ctx.fillStyle = '#e2e8f0';
+          ctx.fill();
+        }
+
+        drawCyanArchGauge(165,  baseCy + 15, smallR, 50, 140, state.coolantC, ['50', '90', '140'], 'AGUA °C', 115, true);
+        drawCyanArchGauge(535,  baseCy,      mainR,  0,  7000, dispRpm, ['0', '1', '2', '3', '4', '5', '6', '7'], 'RPM x 1000', 5600, false);
+        drawCyanArchGauge(1065, baseCy,      mainR,  0,  220,  dispSpeed, ['0', '20', '40', '60', '80', '100', '120', '140', '160', '180', '200', '220'], 'KM/H', null, false);
+        drawCyanArchGauge(1435, baseCy + 15, smallR, 0,  100,  state.fuelPct, ['E', '1/2', 'F'], 'TANQUE ' + state.fuelLiters.toFixed(0) + 'L', null, true);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '800 30px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(Math.round(dispSpeed) + ' KM/H  •  MARCHA [' + state.gear + ']  •  ' + state.rangeKm + ' KM', 800, 535);
+        ctx.restore();
+      }
+
+      function renderTourbillonChrono(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        drawOemTelltaleRibbon(ctx, 800, 42, 1020);
+        var cy = 332, r = 222, leftCx = 335, rightCx = 1265;
+        var t = Date.now() * 0.001;
+
+        function drawTourbillonGear(cx, cy, gr, teeth, angle, color) {
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(angle);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, gr * 0.82, 0, Math.PI * 2);
+          ctx.stroke();
+          for (var i = 0; i < teeth; i++) {
+            var a = (i / teeth) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * gr * 0.75, Math.sin(a) * gr * 0.75);
+            ctx.lineTo(Math.cos(a) * gr, Math.sin(a) * gr);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        function drawChronoDial(cx, cy, r, maxVal, val, title, unit, isRpm) {
+          drawLuxuryBezel(ctx, cx, cy, r, true);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fillStyle = '#090c12';
+          ctx.fill();
+
+          drawTourbillonGear(cx - 48, cy - 34, 72, 18, t * 0.8, 'rgba(234, 179, 8, 0.22)');
+          drawTourbillonGear(cx + 52, cy + 24, 56, 14, -t * 1.1, 'rgba(244, 114, 182, 0.18)');
+
+          var startA = 0.75 * Math.PI, sweepA = 1.5 * Math.PI;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.86, startA, startA + sweepA);
+          ctx.strokeStyle = '#fbbf24';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          var steps = isRpm ? 7 : 11;
+          for (var i = 0; i <= steps; i++) {
+            var frac = i / steps;
+            var ang = startA + frac * sweepA;
+            ctx.fillStyle = (isRpm && i >= 6) ? '#f87171' : '#fef08a';
+            ctx.font = '700 22px "Cinzel", serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(isRpm ? i : i * 20), cx + Math.cos(ang) * (r * 0.69), cy + Math.sin(ang) * (r * 0.69));
+          }
+
+          ctx.fillStyle = '#f59e0b';
+          ctx.font = '700 14px "Cinzel", serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(title, cx, cy - 68);
+
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = '800 26px "Orbitron", sans-serif';
+          ctx.fillText(String(Math.round(val)), cx, cy + 57);
+          ctx.font = '600 13px "Cinzel", serif';
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillText(unit, cx, cy + 92);
+
+          var clamped = Math.max(0, Math.min(maxVal, val));
+          var nAng = startA + (clamped / maxVal) * sweepA;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(nAng);
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.moveTo(-36, -4.5);
+          ctx.lineTo(r * 0.82, 0);
+          ctx.lineTo(-36, 4.5);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+          ctx.fillStyle = '#fde047';
+          ctx.fill();
+        }
+
+        drawChronoDial(leftCx, cy, r, 7000, dispRpm, 'CHRONOGRAPHE RPM', 'x1000 TOURS/MIN', true);
+        drawChronoDial(rightCx, cy, r, 220, dispSpeed, 'VITESSE GRAND TOURER', 'KM / HEURE', false);
+
+        var midX = 800;
+        drawTourbillonGear(midX, cy - 10, 105, 24, t * 0.5, 'rgba(234, 179, 8, 0.32)');
+        ctx.fillStyle = 'rgba(9, 12, 18, 0.86)';
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 2;
+        drawRoundRectPath(ctx, midX - 175, cy - 135, 350, 270, 18);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#fef08a';
+        ctx.font = '700 18px "Cinzel", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('RÉSERVE DE MARCHE', midX, cy - 95);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 44px "Cinzel", serif';
+        ctx.fillText(state.rangeKm + ' KM', midX, cy - 35);
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '700 20px "Cormorant Garamond", serif';
+        ctx.fillText('Tanque: ' + state.fuelLiters.toFixed(1) + ' L (' + Math.round(state.fuelPct) + '%)', midX, cy + 18);
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '700 18px "Share Tech Mono", monospace';
+        ctx.fillText('Marcha [' + state.gear + '] • Agua ' + Math.round(state.coolantC) + '°C', midX, cy + 68);
+        ctx.restore();
+      }
+
+      function renderSportTheme(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        var totalSegs = 42, barMarginX = 95, barWidth = 1410;
+        var segW = (barWidth / totalSegs) * 0.74, segGap = (barWidth / totalSegs);
+        var activeSegs = Math.round((dispRpm / 7000) * totalSegs);
+        var shiftFlash = dispRpm >= 6200 && (Math.floor(Date.now() / 75) % 2 === 0);
+
+        for (var i = 0; i < totalSegs; i++) {
+          var sx = barMarginX + i * segGap;
+          var frac = i / totalSegs;
+          var sy = 26 + Math.pow(Math.abs(frac - 0.5) * 2, 2) * 18;
+          var color = '#1e293b';
+          if (i < activeSegs) {
+            if (shiftFlash) color = '#ef4444';
+            else if (frac < 0.58) color = '#22c55e';
+            else if (frac < 0.82) color = '#f59e0b';
+            else color = '#ef4444';
+          }
+          ctx.fillStyle = color;
+          ctx.fillRect(sx, sy, segW, 38);
+        }
+
+        drawOemTelltaleRibbon(ctx, 800, 108, 980);
+
+        ctx.fillStyle = 'rgba(11, 17, 30, 0.88)';
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        drawRoundRectPath(ctx, 95, 165, 370, 380, 16);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = '800 18px "Orbitron", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('GT TELEMETRY // CHEVROLET', 120, 205);
+
+        var gtRows = [
+          ['RPM MOTOR', Math.round(dispRpm) + ' RPM', '#fbbf24'],
+          ['TANQUE NAFTA', state.fuelLiters.toFixed(1) + ' L (' + Math.round(state.fuelPct) + '%)', '#34d399'],
+          ['AUTONOMÍA', state.rangeKm + ' KM', '#38bdf8'],
+          ['CONSUMO INST.', state.instKml >= 90 ? 'CUT-OFF' : (state.instKml.toFixed(1) + ' km/L'), '#e2e8f0'],
+          ['TEMP. AGUA', Math.round(state.coolantC) + ' °C', '#38bdf8'],
+          ['BATERÍA / ACEITE', state.batteryV.toFixed(1) + 'V • ' + state.oilBar.toFixed(1) + 'B', '#cbd5e1']
+        ];
+        for (var idx = 0; idx < gtRows.length; idx++) {
+          var row = gtRows[idx];
+          var ry = 252 + idx * 48;
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '700 14px "Inter", sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(row[0], 120, ry);
+          ctx.fillStyle = row[2];
+          ctx.font = '800 18px "Share Tech Mono", monospace';
+          ctx.textAlign = 'right';
+          ctx.fillText(row[1], 440, ry);
+        }
+
+        var cy = 355;
+        ctx.fillStyle = '#0f172a';
+        ctx.strokeStyle = dispRpm >= 6000 ? '#ef4444' : '#f59e0b';
+        ctx.lineWidth = 3.5;
+        drawRoundRectPath(ctx, 520, cy - 115, 145, 230, 16);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '700 15px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('MARCHA', 592, cy - 82);
+        ctx.fillStyle = dispRpm >= 6000 ? '#ef4444' : '#f59e0b';
+        ctx.font = '900 115px "Orbitron", sans-serif';
+        ctx.fillText(String(state.gear), 592, cy + 18);
+
+        ctx.fillStyle = 'rgba(11, 17, 30, 0.78)';
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+        ctx.lineWidth = 2;
+        drawRoundRectPath(ctx, 695, cy - 115, 435, 230, 16);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 128px "Orbitron", sans-serif';
+        ctx.fillText(String(Math.round(dispSpeed)), 912, cy - 18);
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = '800 22px "Orbitron", sans-serif';
+        ctx.fillText('KM/H   •   ' + Math.round(dispRpm) + ' RPM', 912, cy + 82);
+
+        ctx.fillStyle = 'rgba(11, 17, 30, 0.88)';
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        drawRoundRectPath(ctx, 1165, 165, 340, 380, 16);
+        ctx.fill();
+        ctx.stroke();
+
+        drawMinimalCarAssistance(ctx, 1335, 355, 1.45);
+        ctx.restore();
+      }
+
+      // ========================================================================
+      // FAMILIA 4: VIRTUAL COCKPIT, AVIACIÓN & GLASS (4A, 4B, 4C)
+      // ========================================================================
+      function renderVirtualCockpitPhoto3(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        drawOemTelltaleRibbon(ctx, 800, 42, 1020);
+        var cy = 335, r = 218, leftCx = 305, rightCx = 1295;
+        var startL = 0.72 * Math.PI, sweepL = 1.52 * Math.PI, bandThick = 64;
+
+        ctx.beginPath();
+        ctx.arc(leftCx, cy, r * 0.78, startL, startL + sweepL);
+        ctx.strokeStyle = 'rgba(100, 116, 139, 0.38)';
+        ctx.lineWidth = bandThick;
+        ctx.stroke();
+
+        var curRpmFrac = Math.min(1, dispRpm / 8000);
+        ctx.beginPath();
+        ctx.arc(leftCx, cy, r * 0.78, startL, startL + sweepL * curRpmFrac);
+        ctx.strokeStyle = dispRpm >= 5800 ? '#ef4444' : 'rgba(226, 232, 240, 0.82)';
+        ctx.lineWidth = bandThick;
+        ctx.stroke();
+
+        for (var i = 1; i <= 8; i++) {
+          var frac = 0.04 + (i / 8) * 0.90;
+          var ang = startL + frac * sweepL;
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '900 24px "Orbitron", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(i), leftCx + Math.cos(ang) * (r * 0.78), cy + Math.sin(ang) * (r * 0.78));
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 44px "Orbitron", sans-serif';
+        ctx.fillText(String(Math.round(dispRpm)), leftCx, cy - 8);
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '700 16px "Orbitron", sans-serif';
+        ctx.fillText('RPM • MARCHA ' + state.gear, leftCx, cy + 38);
+
+        var spdGrad = ctx.createLinearGradient(rightCx - r, cy, rightCx + r, cy);
+        spdGrad.addColorStop(0, 'rgba(37, 99, 235, 0.88)');
+        spdGrad.addColorStop(0.55, 'rgba(124, 58, 237, 0.85)');
+        spdGrad.addColorStop(1, 'rgba(219, 39, 119, 0.90)');
+
+        ctx.beginPath();
+        ctx.arc(rightCx, cy, r * 0.78, startL, startL + sweepL);
+        ctx.strokeStyle = spdGrad;
+        ctx.lineWidth = bandThick;
+        ctx.stroke();
+
+        var spdMarks = [0, 20, 40, 60, 80, 100, 120, 160, 200, 240];
+        for (var idx = 1; idx < spdMarks.length; idx++) {
+          var sf = 0.04 + (idx / (spdMarks.length - 1)) * 0.90;
+          var sang = startL + sf * sweepL;
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '800 17px "Orbitron", sans-serif';
+          ctx.fillText(String(spdMarks[idx]), rightCx + Math.cos(sang) * (r * 0.78), cy + Math.sin(sang) * (r * 0.78));
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 68px "Orbitron", sans-serif';
+        ctx.fillText(String(Math.round(dispSpeed)), rightCx, cy - 6);
+        ctx.font = '700 20px "Inter", sans-serif';
+        ctx.fillStyle = '#f472b6';
+        ctx.fillText('km/h', rightCx, cy + 46);
+
+        var midX = 800, hudW = 460, hudLeft = 570;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 25px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Autonomía: ' + state.rangeKm + ' km', hudLeft, 130);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '600 19px "Inter", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('Tanque: ' + state.fuelLiters.toFixed(1) + ' L', hudLeft + hudW, 130);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 26px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Consumo & Autonomía', midX, 215);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '700 24px "Inter", sans-serif';
+        ctx.fillText('Ø ' + state.instL100.toFixed(1) + ' L/100km  (' + (state.instKml >= 90 ? 'CUT' : state.instKml.toFixed(1)) + ' km/L)', midX, 285);
+
+        var barX = hudLeft + 20, barW = hudW - 40, barY = 340, nSegs = 40;
+        var fillSegs = Math.round(Math.min(1, state.instL100 / 20) * nSegs);
+        for (var s = 0; s < nSegs; s++) {
+          ctx.fillStyle = s < fillSegs ? '#38bdf8' : 'rgba(255,255,255,0.25)';
+          ctx.fillRect(barX + s * (barW / nSegs), barY, (barW / nSegs) * 0.72, 12);
+        }
+
+        var scaleVals = [0, 5, 10, 15, 20];
+        for (var sv = 0; sv < scaleVals.length; sv++) {
+          var val = scaleVals[sv];
+          var sx = barX + (val / 20) * barW;
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = '700 15px "Inter", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(val === 20 ? '20 max' : String(val), sx, barY + 28);
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 22px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(Math.floor(state.odometerKm) + ' km', hudLeft + 10, 465);
+        ctx.textAlign = 'right';
+        ctx.fillText('Trip: ' + state.tripKm.toFixed(1) + ' km', hudLeft + hudW - 10, 465);
+        ctx.restore();
+      }
+
+      function renderPaganiAviation(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        renderMinimalGlass3D(w, h, dispRpm, dispSpeed, true);
+        var cy = 335, midX = 800;
+        var t = Date.now() * 0.001 * (0.4 + dispRpm / 1200);
+        var turbR = 132;
+        drawLuxuryBezel(ctx, midX, cy - 25, turbR, true);
+        ctx.beginPath();
+        ctx.arc(midX, cy - 25, turbR, 0, Math.PI * 2);
+        ctx.fillStyle = '#090d16';
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(midX, cy - 25);
+        ctx.rotate(t);
+        for (var b = 0; b < 16; b++) {
+          ctx.rotate((Math.PI * 2) / 16);
+          ctx.fillStyle = 'rgba(245, 158, 11, 0.48)';
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(turbR * 0.5, -turbR * 0.18, turbR * 0.92, 0);
+          ctx.lineTo(turbR * 0.85, turbR * 0.08);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(midX, cy - 25, 46, 0, Math.PI * 2);
+        ctx.fillStyle = '#0f172a';
+        ctx.fill();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '900 48px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(state.gear), midX, cy - 23);
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 1.8;
+        drawRoundRectPath(ctx, midX - 185, 480, 370, 68, 12);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#fde047';
+        ctx.font = '700 20px "Orbitron", sans-serif';
+        ctx.fillText('AUTONOMÍA: ' + state.rangeKm + ' KM (' + state.fuelLiters.toFixed(1) + 'L)', midX, 504);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '600 15px "Share Tech Mono", monospace';
+        ctx.fillText('AGUA ' + Math.round(state.coolantC) + '°C • ACEITE ' + state.oilBar.toFixed(1) + ' BAR', midX, 530);
+        ctx.restore();
+      }
+
+      function renderMinimalGlass3D(w, h, dispRpm, dispSpeed, hideSilhouette) {
+        ctx.save();
+        drawOemTelltaleRibbon(ctx, 800, 42, 1020);
+        var cy = 335, leftCx = 335, rightCx = 1265, r = 212;
+
+        function drawCleanArc(cx, cy, r, frac, mainVal, unit, subLabel, colorEnd) {
+          var startA = 0.8 * Math.PI, sweepA = 1.4 * Math.PI;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, startA, startA + sweepA);
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+          ctx.lineWidth = 24;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, startA, startA + Math.max(0.02, frac) * sweepA);
+          ctx.strokeStyle = colorEnd;
+          ctx.lineWidth = 24;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = '800 88px "Inter", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(mainVal, cx, cy - 14);
+
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '600 22px "Inter", sans-serif';
+          ctx.fillText(unit, cx, cy + 46);
+
+          ctx.fillStyle = colorEnd;
+          ctx.font = '700 20px "Inter", sans-serif';
+          ctx.fillText(subLabel, cx, cy + 108);
+        }
+
+        drawCleanArc(leftCx, cy, r, Math.min(1, dispSpeed / 220), String(Math.round(dispSpeed)), 'km/h', 'Marcha: ' + state.gear, '#38bdf8');
+        drawCleanArc(rightCx, cy, r, Math.min(1, dispRpm / 7000), (dispRpm / 1000).toFixed(1), 'RPM x1000', state.instKml >= 90 ? 'Cut-Off 0.0L' : (state.instKml.toFixed(1) + ' km/L'), dispRpm > 5800 ? '#f43f5e' : '#34d399');
+
+        if (!hideSilhouette) {
+          var midX = 800;
+          drawMinimalCarAssistance(ctx, midX, cy - 22, 1.45);
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+          ctx.lineWidth = 1.5;
+          drawRoundRectPath(ctx, midX - 185, 480, 370, 64, 12);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = '700 20px "Inter", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('Autonomía: ' + state.rangeKm + ' km  •  Tanque: ' + state.fuelLiters.toFixed(1) + ' L', midX, 512);
+        }
+        ctx.restore();
+      }
+
+      // ========================================================================
+      // FAMILIA 5: RETRO 80s/90s VFD, CRT & TUBOS NIXIE (5A, 5B, 5C)
+      // ========================================================================
+      function renderRetroKadettGsi(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        var cyanVfd = '#00f5d4', amberVfd = '#ffbe0b', magentaVfd = '#ff007f';
+        ctx.strokeStyle = 'rgba(0, 245, 212, 0.45)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(32, 22, 1536, 566);
+
+        drawOemTelltaleRibbon(ctx, 800, 52, 1000);
+
+        var totalBars = 34, startX = 76, spanW = 840;
+        var activeBars = Math.round((dispRpm / 7000) * totalBars);
+
+        ctx.fillStyle = amberVfd;
+        ctx.font = '700 20px "Share Tech Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('TACHOMETER // ' + Math.round(dispRpm) + ' RPM', startX, 108);
+
+        for (var i = 0; i < totalBars; i++) {
+          var frac = i / totalBars;
+          var bx = startX + frac * spanW;
+          var rise = frac < 0.35 ? (frac / 0.35) : 1.0;
+          var barH = 44 + rise * 92;
+          var by = 290 - barH;
+          var bw = (spanW / totalBars) * 0.72;
+
+          var col = 'rgba(0, 245, 212, 0.12)';
+          if (i < activeBars) {
+            if (frac >= 0.84) col = magentaVfd;
+            else if (frac >= 0.68) col = amberVfd;
+            else col = cyanVfd;
+          }
+          ctx.fillStyle = col;
+          ctx.fillRect(bx, by, bw, barH);
+        }
+
+        var spdBoxX = 965, spdBoxY = 92;
+        ctx.fillStyle = 'rgba(4, 12, 24, 0.92)';
+        ctx.strokeStyle = cyanVfd;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(spdBoxX, spdBoxY, 555, 210);
+
+        ctx.fillStyle = cyanVfd;
+        ctx.font = '900 120px "Orbitron", monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(Math.round(dispSpeed)), spdBoxX + 370, spdBoxY + 112);
+
+        ctx.fillStyle = amberVfd;
+        ctx.font = '700 28px "Share Tech Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('KM/H', spdBoxX + 390, spdBoxY + 78);
+        ctx.fillStyle = magentaVfd;
+        ctx.fillText('GEAR [' + state.gear + ']', spdBoxX + 390, spdBoxY + 142);
+
+        var botY = 365, colW = 365;
+        var segGroups = [
+          { title: 'FUEL TANK (L)', val: state.fuelLiters.toFixed(1) + ' L (' + Math.round(state.fuelPct) + '%)', frac: state.fuelPct / 100, col: cyanVfd },
+          { title: 'AUTONOMY (KM)', val: state.rangeKm + ' KM', frac: Math.min(1, state.rangeKm / 650), col: amberVfd },
+          { title: 'ECONOMY (KM/L)', val: state.instKml >= 90 ? 'CUT-OFF' : (state.instKml.toFixed(1) + ' KM/L'), frac: Math.min(1, state.instKml / 20), col: cyanVfd },
+          { title: 'COOLANT TEMP', val: Math.round(state.coolantC) + ' °C', frac: (state.coolantC - 50) / 75, col: cyanVfd }
+        ];
+
+        for (var idx = 0; idx < segGroups.length; idx++) {
+          var g = segGroups[idx];
+          var gx = 76 + idx * colW;
+          ctx.fillStyle = amberVfd;
+          ctx.font = '700 18px "Share Tech Mono", monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText(g.title, gx, botY);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '700 26px "Orbitron", monospace';
+          ctx.fillText(g.val, gx, botY + 42);
+
+          var nBlocks = 14;
+          var litBlocks = Math.round(Math.max(0, Math.min(1, g.frac)) * nBlocks);
+          var blockW = ((colW * 0.86) / nBlocks) * 0.75;
+          var blockStep = (colW * 0.86) / nBlocks;
+
+          for (var b = 0; b < nBlocks; b++) {
+            ctx.fillStyle = b < litBlocks ? g.col : 'rgba(255,255,255,0.1)';
+            ctx.fillRect(gx + b * blockStep, botY + 75, blockW, 48);
+          }
+        }
+        ctx.restore();
+      }
+
+      function renderCorvetteC4(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        drawOemTelltaleRibbon(ctx, 800, 46, 1000);
+        var midX = 800, barsCount = 28;
+
+        for (var i = 0; i < barsCount; i++) {
+          var frac = i / barsCount;
+          var lx = 70 + frac * 455;
+          var rx = 1530 - frac * 455;
+          var barH = 310 - frac * 145;
+          var by = 335 - barH / 2;
+
+          var spdLit = i < Math.round((dispSpeed / 220) * barsCount);
+          ctx.fillStyle = spdLit ? (frac > 0.75 ? '#f97316' : '#22c55e') : 'rgba(34, 197, 94, 0.12)';
+          ctx.fillRect(lx, by, 10, barH);
+
+          var rpmLit = i < Math.round((dispRpm / 7000) * barsCount);
+          ctx.fillStyle = rpmLit ? (frac > 0.8 ? '#ef4444' : '#f97316') : 'rgba(249, 115, 22, 0.12)';
+          ctx.fillRect(rx - 10, by, 10, barH);
+        }
+
+        ctx.fillStyle = '#05080f';
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(570, 105, 460, 440);
+        ctx.fillRect(570, 105, 460, 440);
+
+        ctx.fillStyle = '#22c55e';
+        ctx.font = '900 92px "Orbitron", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(Math.round(dispSpeed)), midX, 205);
+
+        ctx.font = '700 22px "Share Tech Mono", monospace';
+        ctx.fillText('KM/H  •  ' + Math.round(dispRpm) + ' RPM  •  [' + state.gear + ']', midX, 285);
+        ctx.fillStyle = '#eab308';
+        ctx.fillText('FUEL TANK: ' + state.fuelLiters.toFixed(1) + ' L (' + Math.round(state.fuelPct) + '%)', midX, 365);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText('EST. RANGE: ' + state.rangeKm + ' KM', midX, 415);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillText('WATER: ' + Math.round(state.coolantC) + '°C  •  BATT: ' + state.batteryV.toFixed(1) + 'V', midX, 470);
+        ctx.restore();
+      }
+
+      function renderNixieTubes(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        var leftBlink = (state.telltales.turnLeft || state.hazardActive) && state.blinkPhase;
+        var rightBlink = (state.telltales.turnRight || state.hazardActive) && state.blinkPhase;
+        var nixieLamps = [
+          { k:'turnLeft', l:'IZQ', c:'#22c55e', on:leftBlink },
+          { k:'lowBeam',  l:'BAJA', c:'#22c55e', on:state.telltales.lowBeam },
+          { k:'highBeam', l:'ALTA', c:'#3b82f6', on:state.telltales.highBeam },
+          { k:'footBrake',l:'STOP', c:'#ef4444', on:state.telltales.footBrake },
+          { k:'handbrake',l:'FRENO', c:'#ef4444', on:state.telltales.handbrake },
+          { k:'checkEngine',l:'CHECK', c:'#f59e0b', on:state.telltales.checkEngine },
+          { k:'oilWarn',  l:'ACEITE', c:'#ef4444', on:state.telltales.oilWarn },
+          { k:'batteryWarn',l:'BAT', c:'#ef4444', on:state.telltales.batteryWarn },
+          { k:'lowFuel',  l:'NAFTA', c:'#f59e0b', on:state.telltales.lowFuel },
+          { k:'turnRight',l:'DER', c:'#22c55e', on:rightBlink }
+        ];
+        for (var idx = 0; idx < nixieLamps.length; idx++) {
+          var nl = nixieLamps[idx];
+          drawJewelLamp(ctx, 260 + idx * 120, 48, 12, nl.c, nl.on, nl.l, true, nl.k);
+        }
+
+        function drawNixieTube(x, y, tw, th, charStr, labelTop) {
+          ctx.fillStyle = '#a16207';
+          ctx.fillRect(x + tw * 0.1, y + th * 0.88, tw * 0.8, th * 0.12);
+
+          ctx.fillStyle = 'rgba(28, 16, 8, 0.92)';
+          ctx.strokeStyle = '#ca8a04';
+          ctx.lineWidth = 2;
+          drawRoundRectPath(ctx, x, y, tw, th * 0.88, 28);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#fb923c';
+          ctx.font = '800 ' + Math.round(th * 0.62) + 'px "Rajdhani", monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(charStr, x + tw / 2, y + th * 0.46);
+
+          if (labelTop) {
+            ctx.fillStyle = '#fde047';
+            ctx.font = '700 18px "Cinzel", serif';
+            ctx.fillText(labelTop, x + tw / 2, y - 22);
+          }
+        }
+
+        var rawSpd = padZeros(Math.round(dispSpeed), 3);
+        for (var i = 0; i < 3; i++) {
+          drawNixieTube(75 + i * 152, 165, 135, 360, rawSpd.charAt(i), i === 1 ? 'VELOCIDAD KM/H' : '');
+        }
+
+        var midX = 800, cy = 345, r = 182;
+        drawLuxuryBezel(ctx, midX, cy, r, true);
+        ctx.beginPath();
+        ctx.arc(midX, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = '#1c1917';
+        ctx.fill();
+
+        ctx.fillStyle = '#fb923c';
+        ctx.font = '700 20px "Cinzel", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('AUTONOMÍA', midX, cy - 72);
+        ctx.fillStyle = '#fef08a';
+        ctx.font = '800 44px "Share Tech Mono", monospace';
+        ctx.fillText(state.rangeKm + ' KM', midX, cy - 18);
+        ctx.fillStyle = '#fdba74';
+        ctx.font = '700 22px "Share Tech Mono", monospace';
+        ctx.fillText('TANQUE: ' + state.fuelLiters.toFixed(1) + ' L', midX, cy + 32);
+        ctx.fillStyle = '#fde047';
+        ctx.font = '700 18px "Share Tech Mono", monospace';
+        ctx.fillText('AGUA ' + Math.round(state.coolantC) + '°C • [' + state.gear + ']', midX, cy + 78);
+
+        var rawRpm = padZeros(Math.round(dispRpm / 10), 3);
+        for (var j = 0; j < 3; j++) {
+          drawNixieTube(1085 + j * 152, 165, 135, 360, rawRpm.charAt(j), j === 1 ? 'TACÓMETRO RPM x10' : '');
+        }
+        ctx.restore();
+      }
+
+      // ========================================================================
+      // FAMILIA 6: ESPECIALES CHEVROLET & HYPERCAR (6A, 6B, 6C)
+      // ========================================================================
+      function renderChevyCamaroTrack(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        drawOemTelltaleRibbon(ctx, 800, 42, 1020);
+        drawChevyBowtie(ctx, 800, 92, 0.9);
+        var cy = 338, leftCx = 335, rightCx = 1265, r = 220;
+
+        function drawCamaroPod(cx, cy, r, maxVal, val, label, isRpm) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 1.04, 0, Math.PI * 2);
+          ctx.fillStyle = '#090d16';
+          ctx.fill();
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+
+          var startA = 0.72 * Math.PI, sweepA = 1.56 * Math.PI;
+          var frac = Math.min(1, val / maxVal);
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.86, startA, startA + sweepA);
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.16)';
+          ctx.lineWidth = 22;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.86, startA, startA + Math.max(0.02, frac) * sweepA);
+          ctx.strokeStyle = (isRpm && val >= 5800) ? '#ef4444' : '#f59e0b';
+          ctx.lineWidth = 22;
+          ctx.stroke();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '900 74px "Orbitron", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(Math.round(val)), cx, cy - 8);
+
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = '700 16px "Orbitron", sans-serif';
+          ctx.fillText(label, cx, cy + 48);
+        }
+
+        drawCamaroPod(leftCx, cy, r, 7000, dispRpm, 'RPM PERFORMANCE', true);
+        drawCamaroPod(rightCx, cy, r, 220, dispSpeed, 'VELOCIDAD KM/H', false);
+
+        var midX = 800;
+        ctx.beginPath();
+        ctx.arc(midX, cy - 15, 92, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(midX, cy - 15, 48, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(midX, cy - 15, 7, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444';
+        ctx.fill();
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '800 22px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('MARCHA [' + state.gear + ']  •  ' + state.rangeKm + ' KM', midX, 495);
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '700 15px "Share Tech Mono", monospace';
+        ctx.fillText('ACEITE ' + state.oilBar.toFixed(1) + ' BAR  •  AGUA ' + Math.round(state.coolantC) + '°C  •  ' + state.batteryV.toFixed(1) + 'V', midX, 526);
+        ctx.restore();
+      }
+
+      function renderChevyUltiumHud(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        drawOemTelltaleRibbon(ctx, 800, 42, 1040);
+        drawChevyBowtie(ctx, 800, 92, 0.9);
+        var midX = 800, cy = 320;
+
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.28)';
+        ctx.lineWidth = 2;
+        for (var wv = -2; wv <= 2; wv++) {
+          ctx.beginPath();
+          ctx.moveTo(120, cy + wv * 28);
+          ctx.quadraticCurveTo(midX, cy + wv * 55, 1480, cy + wv * 28);
+          ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(midX, cy, 175, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(6, 11, 22, 0.92)';
+        ctx.fill();
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 116px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(Math.round(dispSpeed)), midX, cy - 12);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '700 18px "Orbitron", sans-serif';
+        ctx.fillText('KM/H   •   [' + state.gear + ']', midX, cy + 62);
+
+        ctx.fillStyle = 'rgba(12, 19, 34, 0.86)';
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        ctx.lineWidth = 1.8;
+        drawRoundRectPath(ctx, 130, 210, 410, 220, 18);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '700 14px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('RÉGIMEN DE MOTOR', 165, 255);
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '800 54px "Orbitron", sans-serif';
+        ctx.fillText(Math.round(dispRpm) + ' RPM', 165, 320);
+        ctx.fillStyle = '#34d399';
+        ctx.font = '700 18px "Inter", sans-serif';
+        ctx.fillText('Consumo: ' + (state.instKml >= 90 ? 'Cut-Off' : state.instKml.toFixed(1) + ' km/L'), 165, 385);
+
+        ctx.fillStyle = 'rgba(12, 19, 34, 0.86)';
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        drawRoundRectPath(ctx, 1060, 210, 410, 220, 18);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '700 14px "Inter", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('AUTONOMÍA ESTIMADA', 1435, 255);
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '800 54px "Orbitron", sans-serif';
+        ctx.fillText(state.rangeKm + ' KM', 1435, 320);
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '700 18px "Inter", sans-serif';
+        ctx.fillText('Tanque: ' + state.fuelLiters.toFixed(1) + ' L (' + Math.round(state.fuelPct) + '%)', 1435, 385);
+        ctx.restore();
+      }
+
+      function renderHyperLfaCenter(w, h, dispRpm, dispSpeed) {
+        ctx.save();
+        drawOemTelltaleRibbon(ctx, 800, 42, 1040);
+        var midX = 800, cy = 332, r = 228;
+
+        ctx.fillStyle = 'rgba(12, 17, 28, 0.88)';
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+        ctx.lineWidth = 2;
+        drawRoundRectPath(ctx, 110, 165, 390, 340, 18);
+        ctx.fill();
+        ctx.stroke();
+        drawRoundRectPath(ctx, 1100, 165, 390, 340, 18);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = '700 14px "Orbitron", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('COMBUSTIBLE & RANGO', 145, 215);
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '800 42px "Orbitron", sans-serif';
+        ctx.fillText(state.rangeKm + ' KM', 145, 275);
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '700 22px "Share Tech Mono", monospace';
+        ctx.fillText('TANQUE: ' + state.fuelLiters.toFixed(1) + ' L (' + Math.round(state.fuelPct) + '%)', 145, 340);
+        ctx.fillStyle = '#34d399';
+        ctx.fillText('ECO: ' + (state.instKml >= 90 ? 'CUT-OFF' : state.instKml.toFixed(1) + ' KM/L'), 145, 395);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText('ODO: ' + Math.floor(state.odometerKm) + ' KM', 145, 450);
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = '700 14px "Orbitron", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('PARÁMETROS DE MOTOR', 1455, 215);
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '800 42px "Orbitron", sans-serif';
+        ctx.fillText(Math.round(state.coolantC) + ' °C', 1455, 275);
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '700 22px "Share Tech Mono", monospace';
+        ctx.fillText('BATERÍA: ' + state.batteryV.toFixed(1) + ' V', 1455, 340);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText('ACEITE: ' + state.oilBar.toFixed(1) + ' BAR', 1455, 395);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText('TRIP: ' + state.tripKm.toFixed(1) + ' KM', 1455, 450);
+
+        drawLuxuryBezel(ctx, midX, cy, r, false);
+        ctx.beginPath();
+        ctx.arc(midX, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = '#070a10';
+        ctx.fill();
+
+        var startA = 0.72 * Math.PI, sweepA = 1.56 * Math.PI;
+        var rpmFrac = Math.min(1, dispRpm / 7000);
+        ctx.beginPath();
+        ctx.arc(midX, cy, r * 0.86, startA, startA + sweepA * rpmFrac);
+        ctx.strokeStyle = dispRpm >= 5800 ? '#ef4444' : '#38bdf8';
+        ctx.lineWidth = 18;
+        ctx.stroke();
+
+        for (var i = 0; i <= 7; i++) {
+          var ang = startA + (i / 7) * sweepA;
+          var nx = midX + Math.cos(ang) * (r * 0.68);
+          var ny = cy + Math.sin(ang) * (r * 0.68);
+          ctx.fillStyle = i >= 6 ? '#ef4444' : '#f8fafc';
+          ctx.font = '800 24px "Orbitron", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(i), nx, ny);
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 96px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(Math.round(dispSpeed)), midX, cy - 8);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '700 18px "Orbitron", sans-serif';
+        ctx.fillText('KM/H  •  MARCHA [' + state.gear + ']', midX, cy + 56);
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '700 14px "Share Tech Mono", monospace';
+        ctx.fillText(Math.round(dispRpm) + ' RPM', midX, cy + 90);
+        ctx.restore();
+      }
+
+      // ========================================================================
+      // BUCLE PRINCIPAL DE RENDERIZADO A 60 FPS (PRODUCCIÓN PURA SIN SIMULADOR)
       // ========================================================================
       var lastFrameTime = Date.now();
 
@@ -2892,30 +3685,21 @@ void loop() {
           }
         }
 
-        if (!state.serialConnected) {
-          var t = now * 0.001;
-          if (state.simMode === 'cruise') {
-            state.targetSpeed = 78 + Math.sin(t * 0.45) * 22 + Math.cos(t * 1.1) * 7;
-            state.targetRpm = 2100 + (state.targetSpeed - 60) * 28 + Math.sin(t * 1.8) * 160;
-            document.getElementById('sliderSpeed').value = String(Math.round(state.targetSpeed));
-            document.getElementById('sliderRpm').value = String(Math.round(state.targetRpm));
-          } else if (state.simMode === 'sportPull') {
-            var cycle = (t % 14) / 14;
-            state.targetSpeed = Math.min(175, cycle * 195);
-            var gearSaw = (cycle * 4.5) % 1;
-            state.targetRpm = 2400 + gearSaw * 4350;
-            document.getElementById('sliderSpeed').value = String(Math.round(state.targetSpeed));
-            document.getElementById('sliderRpm').value = String(Math.round(state.targetRpm));
-          }
+        // Si pasan más de 1.5s sin recibir tramas del ESP32, las agujas caen suavemente a 0
+        if (!state.serialConnected && state.lastTelemetryRxMs > 0 && (now - state.lastTelemetryRxMs > 1500)) {
+          state.targetRpm = 0;
+          state.targetSpeed = 0;
         }
 
-        state.rpm += (state.targetRpm - state.rpm) * Math.min(1, dt * 10);
-        state.speed += (state.targetSpeed - state.speed) * Math.min(1, dt * 8);
+        state.rpm += (state.targetRpm - state.rpm) * Math.min(1, dt * 12);
+        state.speed += (state.targetSpeed - state.speed) * Math.min(1, dt * 10);
+        if (state.rpm < 5 && state.targetRpm === 0) state.rpm = 0;
+        if (state.speed < 0.4 && state.targetSpeed === 0) state.speed = 0;
 
         var dispRpm = state.rpm;
         var dispSpeed = state.speed;
         if (state.sweepActive) {
-          state.sweepProgress += dt * 1.3;
+          state.sweepProgress += dt * 1.35;
           if (state.sweepProgress >= 2.0) {
             state.sweepActive = false;
             state.sweepProgress = 0;
@@ -2926,11 +3710,6 @@ void loop() {
             dispSpeed = ease * 220;
           }
         }
-
-        document.getElementById('lblSliderRpm').textContent = Math.round(dispRpm) + ' RPM';
-        document.getElementById('lblSliderSpeed').textContent = Math.round(dispSpeed) + ' km/h';
-        document.getElementById('lblSliderFuel').textContent = Math.round(state.fuelPct) + '% (' + state.fuelLiters.toFixed(1) + ' L)';
-        document.getElementById('lblSliderTemp').textContent = Math.round(state.coolantC) + ' °C';
 
         updateTripComputer(dt);
         updateDOMReadouts();
@@ -2952,20 +3731,32 @@ void loop() {
         ctx.translate(offsetX, offsetY);
         ctx.scale(scale, scale);
 
-        if (state.clusterStyle === 0) {
-          renderChevroletMinimalArc(VW, VH, dispRpm, dispSpeed);
-        } else if (state.clusterStyle === 1) {
-          renderChevroletRsPerformance(VW, VH, dispRpm, dispSpeed);
-        } else {
-          renderChevroletDualOem(VW, VH, dispRpm, dispSpeed);
-        }
+        var st = state.clusterStyle;
+        if (st === 0) renderChevroletMinimalArc(VW, VH, dispRpm, dispSpeed);
+        else if (st === 1) renderChevroletRsPerformance(VW, VH, dispRpm, dispSpeed);
+        else if (st === 2) renderChevroletDualOem(VW, VH, dispRpm, dispSpeed);
+        else if (st === 3) renderVdo1958(VW, VH, dispRpm, dispSpeed);
+        else if (st === 4) renderBurlLuxury1965(VW, VH, dispRpm, dispSpeed);
+        else if (st === 5) renderMuscle1969(VW, VH, dispRpm, dispSpeed);
+        else if (st === 6) renderPanoramicArch(VW, VH, dispRpm, dispSpeed);
+        else if (st === 7) renderTourbillonChrono(VW, VH, dispRpm, dispSpeed);
+        else if (st === 8) renderSportTheme(VW, VH, dispRpm, dispSpeed);
+        else if (st === 9) renderVirtualCockpitPhoto3(VW, VH, dispRpm, dispSpeed);
+        else if (st === 10) renderPaganiAviation(VW, VH, dispRpm, dispSpeed);
+        else if (st === 11) renderMinimalGlass3D(VW, VH, dispRpm, dispSpeed, false);
+        else if (st === 12) renderRetroKadettGsi(VW, VH, dispRpm, dispSpeed);
+        else if (st === 13) renderCorvetteC4(VW, VH, dispRpm, dispSpeed);
+        else if (st === 14) renderNixieTubes(VW, VH, dispRpm, dispSpeed);
+        else if (st === 15) renderChevyCamaroTrack(VW, VH, dispRpm, dispSpeed);
+        else if (st === 16) renderChevyUltiumHud(VW, VH, dispRpm, dispSpeed);
+        else renderHyperLfaCenter(VW, VH, dispRpm, dispSpeed);
 
         ctx.restore();
         window.requestAnimationFrame(tick);
       }
 
       // ========================================================================
-      // GESTIÓN DE VISTAS (MODO QUIOSCO 100% VELOCÍMETRO vs PANTALLA DIVIDIDA 50/50)
+      // GESTIÓN DE VISTAS Y CONTROLES DE LA GALERÍA DE 18 TABLEROS
       // ========================================================================
       function setViewMode(mode) {
         state.viewMode = mode;
@@ -3003,13 +3794,41 @@ void loop() {
         document.getElementById('dockBtnAppsSplit').className = 'dock-item' + (mode === 'split_apps' ? ' active' : '');
 
         setTimeout(resizeCanvas, 40);
-        setTimeout(resizeCanvas, 300);
+        setTimeout(resizeCanvas, 280);
+      }
+
+      function renderMasterThemesGallery() {
+        var grid = document.getElementById('masterThemesGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        for (var i = 0; i < MASTER_THEMES.length; i++) {
+          var th = MASTER_THEMES[i];
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.id = 'styleBtn' + i;
+          btn.className = 'grid-btn' + (i === state.clusterStyle ? ' active' : '');
+          btn.style.width = 'calc(33.33% - 8px)';
+          btn.textContent = th.shortName;
+          (function(capturedIdx) {
+            btn.addEventListener('click', function() {
+              setClusterStyle(capturedIdx);
+              showToast('Diseño activo: ' + MASTER_THEMES[capturedIdx].fullTitle);
+            });
+          })(i);
+          grid.appendChild(btn);
+        }
       }
 
       function setClusterStyle(idx) {
-        state.clusterStyle = idx % 3;
-        document.getElementById('lblStyleShort').textContent = CLUSTER_STYLES[state.clusterStyle].shortName;
-        for (var i = 0; i < 3; i++) {
+        var total = MASTER_THEMES.length;
+        state.clusterStyle = ((idx % total) + total) % total;
+        var activeMeta = MASTER_THEMES[state.clusterStyle];
+        document.getElementById('lblStyleShort').textContent = (state.clusterStyle + 1) + '/18 ' + activeMeta.shortName;
+        var container = document.getElementById('canvasContainer');
+        if (container) {
+          container.className = activeMeta.bgClass;
+        }
+        for (var i = 0; i < total; i++) {
           var b = document.getElementById('styleBtn' + i);
           if (b) b.className = 'grid-btn' + (i === state.clusterStyle ? ' active' : '');
         }
@@ -3028,10 +3847,8 @@ void loop() {
         setTimeout(resizeCanvas, 50);
       }
 
-      // Eventos del Dock Inferior y Modo Quiosco
-      document.getElementById('dockBtnClusterOnly').addEventListener('click', function() {
-        setViewMode('cluster_only');
-      });
+      // Eventos principales
+      document.getElementById('dockBtnClusterOnly').addEventListener('click', function() { setViewMode('cluster_only'); });
       document.getElementById('dockBtnNavSplit').addEventListener('click', function() {
         setViewMode(state.viewMode === 'split_map' ? 'cluster_only' : 'split_map');
       });
@@ -3041,32 +3858,28 @@ void loop() {
       document.getElementById('dockBtnAppsSplit').addEventListener('click', function() {
         setViewMode(state.viewMode === 'split_apps' ? 'cluster_only' : 'split_apps');
       });
-      document.getElementById('btnCloseSplitPane').addEventListener('click', function() {
-        setViewMode('cluster_only');
+      document.getElementById('btnCloseSplitPane').addEventListener('click', function() { setViewMode('cluster_only'); });
+
+      document.getElementById('btnPrevClusterStyle').addEventListener('click', function() {
+        setClusterStyle(state.clusterStyle - 1);
+        showToast(MASTER_THEMES[state.clusterStyle].fullTitle);
+      });
+      document.getElementById('btnNextClusterStyle').addEventListener('click', function() {
+        setClusterStyle(state.clusterStyle + 1);
+        showToast(MASTER_THEMES[state.clusterStyle].fullTitle);
+      });
+      document.getElementById('btnOpenThemesGallery').addEventListener('click', function() {
+        document.getElementById('settingsModal').className = 'modal-backdrop';
       });
 
-      document.getElementById('btnCycleClusterStyle').addEventListener('click', function() {
-        setClusterStyle((state.clusterStyle + 1) % 3);
-      });
-      document.getElementById('styleBtn0').addEventListener('click', function() { setClusterStyle(0); });
-      document.getElementById('styleBtn1').addEventListener('click', function() { setClusterStyle(1); });
-      document.getElementById('styleBtn2').addEventListener('click', function() { setClusterStyle(2); });
-
-      document.getElementById('btnPureKiosk').addEventListener('click', function() {
-        togglePureKioskMode(true);
-      });
+      document.getElementById('btnPureKiosk').addEventListener('click', function() { togglePureKioskMode(true); });
       document.getElementById('kioskTopTouchZone').addEventListener('click', function() {
-        if (state.kioskPureHideDock) {
-          togglePureKioskMode(false);
-        } else {
-          togglePureKioskMode(true);
-        }
+        togglePureKioskMode(!state.kioskPureHideDock);
       });
 
-      // Botones de Navegación / Google Maps en Pantalla Dividida
       document.getElementById('btnCenterGpsMap').addEventListener('click', function() {
         if (leafletMap) leafletMap.setView([state.gpsLat, state.gpsLng], 15);
-        showToast('Mapa centrado en posición GPS actual');
+        showToast('Mapa centrado en posición GPS');
       });
       document.getElementById('btnLaunchGMapsSplit').addEventListener('click', function() {
         launchAndroidApp('com.google.android.apps.maps', true, 'Google Maps');
@@ -3078,7 +3891,6 @@ void loop() {
         launchAndroidApp('com.google.android.apps.maps', false, 'Google Maps');
       });
 
-      // Categorías y buscador de aplicaciones
       var catBtns = document.querySelectorAll('[data-appcat]');
       for (var cIdx = 0; cIdx < catBtns.length; cIdx++) {
         (function(btn) {
@@ -3097,7 +3909,6 @@ void loop() {
         renderAppsGrid();
       });
 
-      // Controles Multimedia y de Sistema
       var mediaBtns = document.querySelectorAll('[data-mediacmd]');
       for (var mIdx = 0; mIdx < mediaBtns.length; mIdx++) {
         (function(btn) {
@@ -3111,8 +3922,7 @@ void loop() {
       for (var qIdx = 0; qIdx < quickPkgBtns.length; qIdx++) {
         (function(btn) {
           btn.addEventListener('click', function() {
-            var pkg = btn.getAttribute('data-quickpkg');
-            launchAndroidApp(pkg, false, btn.textContent);
+            launchAndroidApp(btn.getAttribute('data-quickpkg'), false, btn.textContent);
           });
         })(quickPkgBtns[qIdx]);
       }
@@ -3126,16 +3936,17 @@ void loop() {
         })(sysIntentBtns[sIdx]);
       }
 
-      // Balizas
       document.getElementById('btnHazardToggle').addEventListener('click', function() {
         initAudio();
         state.hazardActive = !state.hazardActive;
         this.className = 'dock-item hazard-btn' + (state.hazardActive ? ' active' : '');
       });
 
-      // Modal de Configuración
       var settingsModal = document.getElementById('settingsModal');
       document.getElementById('btnOpenSettingsModal').addEventListener('click', function() {
+        settingsModal.className = 'modal-backdrop';
+      });
+      document.getElementById('connBadge').addEventListener('click', function() {
         settingsModal.className = 'modal-backdrop';
       });
       document.getElementById('btnCloseSettingsModal').addEventListener('click', function() {
@@ -3152,35 +3963,22 @@ void loop() {
         triggerNeedleSweep();
       });
 
-      // Simulador y Sensores
-      function setSimMode(m) {
-        state.simMode = m;
-        document.getElementById('modeAutoCruise').className = 'filter-pill' + (m === 'cruise' ? ' active' : '');
-        document.getElementById('modeSportPull').className = 'filter-pill' + (m === 'sportPull' ? ' active' : '');
-        document.getElementById('modeManual').className = 'filter-pill' + (m === 'manual' ? ' active' : '');
-      }
-      document.getElementById('modeAutoCruise').addEventListener('click', function() { setSimMode('cruise'); });
-      document.getElementById('modeSportPull').addEventListener('click', function() { setSimMode('sportPull'); });
-      document.getElementById('modeManual').addEventListener('click', function() { setSimMode('manual'); });
-
-      document.getElementById('sliderRpm').addEventListener('input', function() {
-        setSimMode('manual');
-        state.targetRpm = Number(this.value);
+      document.getElementById('btnConnectSerial').addEventListener('click', connectEsp32UsbSerial);
+      document.getElementById('btnToggleWifiPoll').addEventListener('click', function() {
+        state.wifiPollEnabled = !state.wifiPollEnabled;
+        this.textContent = 'Wi-Fi ESP32-C3 (192.168.4.1): ' + (state.wifiPollEnabled ? 'ACTIVO' : 'PAUSADO');
+        this.className = 'grid-btn' + (state.wifiPollEnabled ? ' active' : '');
       });
-      document.getElementById('sliderSpeed').addEventListener('input', function() {
-        setSimMode('manual');
-        state.targetSpeed = Number(this.value);
-      });
-      document.getElementById('sliderFuel').addEventListener('input', function() {
-        state.fuelPct = Number(this.value);
-      });
-      document.getElementById('sliderTemp').addEventListener('input', function() {
-        state.coolantC = Number(this.value);
+      document.getElementById('inputEsp32HttpUrl').value = state.esp32HttpUrl;
+      document.getElementById('inputEsp32HttpUrl').addEventListener('change', function() {
+        state.esp32HttpUrl = this.value.replace(/^\s+|\s+$/g, '') || 'http://192.168.4.1/telemetry';
+        savePrefs();
       });
 
       document.getElementById('btnResetTrip').addEventListener('click', function() {
         state.tripKm = 0.0;
-        showToast('Odómetro parcial reiniciado');
+        savePrefs();
+        showToast('Odómetro parcial (Trip) reiniciado a 0.0 km');
       });
 
       document.getElementById('btnAudioToggle').addEventListener('click', function() {
@@ -3189,22 +3987,24 @@ void loop() {
         this.textContent = 'Sonido Giros: ' + (state.audioEnabled ? 'ON' : 'OFF');
       });
 
-      var ttBtns = document.querySelectorAll('.telltale-btn');
-      for (var tIdx = 0; tIdx < ttBtns.length; tIdx++) {
-        (function(btn) {
-          btn.addEventListener('click', function() {
-            initAudio();
-            var key = btn.getAttribute('data-telltale');
-            if (!key) return;
-            if (key === 'turnLeft' && !state.telltales.turnLeft) state.telltales.turnRight = false;
-            if (key === 'turnRight' && !state.telltales.turnRight) state.telltales.turnLeft = false;
-            state.telltales[key] = !state.telltales[key];
-            updateDOMReadouts();
-          });
-        })(ttBtns[tIdx]);
-      }
+      document.getElementById('btnClassicColor').addEventListener('click', function() {
+        var order = ['amber', 'ice', 'red'];
+        var labels = { amber: 'Luz Clásica: Ámbar', ice: 'Luz Clásica: Ice', red: 'Luz Clásica: Rubí' };
+        var next = order[(order.indexOf(state.classicAccent) + 1) % order.length];
+        state.classicAccent = next;
+        this.textContent = labels[next];
+        savePrefs();
+      });
 
-      // Dimmer
+      document.getElementById('btnSyncGitHubQuick').addEventListener('click', function() {
+        if (window.AndroidCockpitBridge && typeof window.AndroidCockpitBridge.checkForGitHubUpdate === 'function') {
+          showToast('Sincronizando actualización OTA...');
+          window.AndroidCockpitBridge.checkForGitHubUpdate('https://enfer1998.github.io/velocimetro-/');
+        } else {
+          window.location.reload();
+        }
+      });
+
       var selectDimmerMode = document.getElementById('selectDimmerMode');
       var sliderNightBrightness = document.getElementById('sliderNightBrightness');
       selectDimmerMode.value = state.dimmerMode;
@@ -3223,7 +4023,6 @@ void loop() {
         savePrefs();
       });
 
-      // Modal Añadir App
       var customAppModal = document.getElementById('customAppModal');
       document.getElementById('btnAddCustomApp').addEventListener('click', function() {
         customAppModal.className = 'modal-backdrop';
@@ -3252,88 +4051,9 @@ void loop() {
         showToast('Aplicación guardada');
       });
 
-      // Modal Código APK
-      var codeModal = document.getElementById('codeModal');
-      document.getElementById('btnOpenApkModalFromSettings').addEventListener('click', function() {
-        settingsModal.className = 'modal-backdrop hidden';
-        codeModal.className = 'modal-backdrop';
-      });
-      document.getElementById('btnCloseCodeModal').addEventListener('click', function() {
-        codeModal.className = 'modal-backdrop hidden';
-      });
-
-      function triggerGitHubOta() {
-        var url = document.getElementById('inputGithubRawUrl').value.replace(/^\s+|\s+$/g, '');
-        if (window.AndroidCockpitBridge && typeof window.AndroidCockpitBridge.checkForGitHubUpdate === 'function') {
-          showToast('Buscando actualización en GitHub...');
-          window.AndroidCockpitBridge.checkForGitHubUpdate(url);
-        } else {
-          showToast('Sincronización OTA lista (' + url + ')');
-        }
-      }
-      document.getElementById('btnSyncGitHubQuick').addEventListener('click', triggerGitHubOta);
-      document.getElementById('btnOtaCheckNow').addEventListener('click', triggerGitHubOta);
-      document.getElementById('btnSaveGithubUrl').addEventListener('click', function() {
-        showToast('URL OTA guardada');
-      });
-      document.getElementById('btnConnectSerial').addEventListener('click', function() {
-        showToast('Puerto USB Serial ESP32 (115200) configurado');
-      });
-
-      var modalTabs = [
-        { btn: 'tabBtnAndroidKt', panel: 'modalPanelAndroidKt' },
-        { btn: 'tabBtnManifest',  panel: 'modalPanelManifest' },
-        { btn: 'tabBtnGradle',    panel: 'modalPanelGradle' },
-        { btn: 'tabBtnTvBox',     panel: 'modalPanelTvBox' },
-        { btn: 'tabBtnEsp32',     panel: 'modalPanelEsp32' }
-      ];
-      function switchCodeTab(activeBtnId) {
-        for (var i = 0; i < modalTabs.length; i++) {
-          var t = modalTabs[i];
-          var b = document.getElementById(t.btn);
-          var p = document.getElementById(t.panel);
-          if (!b || !p) continue;
-          b.className = 'filter-pill' + (t.btn === activeBtnId ? ' active' : '');
-          p.className = (t.btn === activeBtnId ? '' : 'hidden');
-        }
-      }
-      for (var mt = 0; mt < modalTabs.length; mt++) {
-        (function(tabItem) {
-          var b = document.getElementById(tabItem.btn);
-          if (b) b.addEventListener('click', function() { switchCodeTab(tabItem.btn); });
-        })(modalTabs[mt]);
-      }
-
-      function copyBlockById(blockId, msg) {
-        var el = document.getElementById(blockId);
-        if (!el) return;
-        var text = el.textContent || el.innerText;
-        var ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        try { document.execCommand('copy'); } catch (e) {}
-        document.body.removeChild(ta);
-        showToast(msg);
-      }
-      document.getElementById('btnCopyKotlinCode').addEventListener('click', function() {
-        copyBlockById('kotlinCodeBlock', 'MainActivity.kt copiado');
-      });
-      document.getElementById('btnCopyManifestCode').addEventListener('click', function() {
-        copyBlockById('manifestCodeBlock', 'AndroidManifest.xml copiado');
-      });
-      document.getElementById('btnCopyGradleCode').addEventListener('click', function() {
-        copyBlockById('gradleCodeBlock', 'build.gradle copiado');
-      });
-      document.getElementById('btnCopyAdbScript').addEventListener('click', function() {
-        copyBlockById('adbCodeBlock', 'Comandos ADB copiados');
-      });
-      document.getElementById('btnCopyArduinoCode').addEventListener('click', function() {
-        copyBlockById('arduinoCodeBlock', 'Código ESP32 copiado');
-      });
-
       function initCockpitApp() {
         renderAppsGrid();
+        renderMasterThemesGallery();
         try {
           if (window.AndroidCockpitBridge && typeof window.AndroidCockpitBridge.getInstalledAppsJson === 'function') {
             var raw = window.AndroidCockpitBridge.getInstalledAppsJson();
@@ -3341,7 +4061,7 @@ void loop() {
           }
         } catch (e) {}
         setClusterStyle(state.clusterStyle);
-        setViewMode('cluster_only'); // Arranca 100% dedicado al Velocímetro
+        setViewMode('cluster_only');
         updateNightDimmer();
         resizeCanvas();
         triggerNeedleSweep();
